@@ -87,6 +87,24 @@ see "Git checkpoints" at the bottom.
   25 — the path to 25 is a deliberate Boot 3.5+ bump later. Local sdkman JDK
   is already 25, which compiles `--release 21` fine. Verified: full stack
   rebuilt on Temurin 21 images, smoke test green, events flowing end-to-end.
+- DLQ asymmetry fixed: `notification-service` had no error handler, so a
+  poison message on `inventory.result` would be retried briefly then
+  silently dropped (Spring Kafka's default log-and-skip). Mirrored the
+  inventory pattern: `DeadLetterPublishingRecoverer` → `inventory.result.dlq`
+  + producer serializer config (the service publishes nothing in the happy
+  path, so it had none). Exercised BOTH DLQ paths for the first time with
+  malformed messages via `rpk topic produce` — both landed in their DLQs
+  with partition preserved. Note: DLQ record values are base64-wrapped by
+  JsonSerializer; a replay tool must decode.
+- Caught a real startup race while testing: on a cold broker, topics get
+  auto-created with 1 partition on first metadata request, consumers join
+  and get assigned that single partition, and THEN the NewTopic beans expand
+  to 3 partitions — consumers don't see partitions 1-2 until the next
+  metadata refresh (`metadata.max.age.ms`, default 5 min). Messages landing
+  on those partitions are invisible until rebalance. This is exactly why
+  production clusters disable topic auto-creation and provision topics
+  before deploying consumers. Workaround locally: restart consumers (or
+  wait 5 min).
 
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory

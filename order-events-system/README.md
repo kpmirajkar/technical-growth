@@ -15,9 +15,10 @@ Each service is a standalone Maven project (`pom.xml` + `src/main/java/...`).
   publish is keyed by `customer_id` end-to-end, so a given customer's events
   always land on the same partition at every hop
 - Idempotent consumption (dedup by `event_id`, `ConcurrentHashMap`-backed for now)
-- `ErrorHandlingDeserializer` + `DeadLetterPublishingRecoverer` — retries twice
-  with backoff, then routes unprocessable events to `orders.created.dlq`
-  instead of blocking the partition
+- `ErrorHandlingDeserializer` + `DeadLetterPublishingRecoverer` on both
+  consumers — retries with backoff (deserialization failures skip straight to
+  recovery), then routes unprocessable events to `orders.created.dlq` /
+  `inventory.result.dlq` instead of blocking the partition
 - Spring Boot Actuator health groups (`/actuator/health/liveness` and
   `/readiness`) wired into Kubernetes startup/liveness/readiness probes
 - Containerized services (multi-stage Maven → JRE Docker builds), Kubernetes
