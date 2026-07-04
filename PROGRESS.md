@@ -69,6 +69,11 @@ see "Git checkpoints" at the bottom.
 - Partitioning: sent repeated orders for the same `customer_id`s and used
   `rpk topic consume` to confirm each customer lands on the same partition on
   both `orders.created` and `inventory.result`.
+- CI: after relocating the workflow, run #1 (the first ever) went green —
+  all three `mvn verify` matrix jobs passed and all three images pushed to
+  ghcr.io. The `week-1` tag predates this fix on purpose; the CI fix is
+  part of `main`'s history, and moving a published tag a third time wasn't
+  worth it.
 
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory
