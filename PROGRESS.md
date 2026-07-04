@@ -23,6 +23,9 @@ see "Git checkpoints" at the bottom.
   (happy path + both failure-stock scenarios) and added
   `order-events-system/scripts/smoke-test.sh` to run those same requests
   against a live stack and assert on the HTTP response.
+- Theory study sheet: `notes/week-1-concepts.md` — messaging semantics +
+  Kafka mechanics distilled as interview one-pager #1 (the Roadmap's Week 4/
+  8/12 "1-pager" artifacts start here).
 
 **Issues hit & fixed**
 - `consumer_inventory` and `consumer_notification` failed to build: both only
