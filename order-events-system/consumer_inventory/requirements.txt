@@ -1,0 +1,2 @@
+# Deprecated: this project was converted to Java/Spring Boot (see pom.xml, src/).
+# This file is unused and safe to delete.

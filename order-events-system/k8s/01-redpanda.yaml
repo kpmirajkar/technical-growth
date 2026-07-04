@@ -1,0 +1,49 @@
+# Single-node Redpanda for local learning. In production you'd run a
+# StatefulSet with 3+ brokers and PersistentVolumeClaims per broker.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redpanda
+  namespace: order-events
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redpanda
+  template:
+    metadata:
+      labels:
+        app: redpanda
+    spec:
+      containers:
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.5
+          args:
+            - redpanda
+            - start
+            - --smp=1
+            - --overprovisioned
+            - --node-id=0
+            - --kafka-addr=PLAINTEXT://0.0.0.0:29092
+            - --advertise-kafka-addr=PLAINTEXT://redpanda:29092
+          ports:
+            - containerPort: 29092
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda
+  namespace: order-events
+spec:
+  selector:
+    app: redpanda
+  ports:
+    - port: 29092
+      targetPort: 29092

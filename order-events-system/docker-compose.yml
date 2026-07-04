@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.5
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --overprovisioned
+      - --node-id=0
+      - --kafka-addr=PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=localhost:8082
+    ports:
+      - "9092:9092"
+      - "8081:8081"
+      - "8082:8082"
+      - "9644:9644"
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.4.5
+    container_name: redpanda-console
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKERS: redpanda:29092
+    depends_on:
+      - redpanda
+
+  order-service:
+    build: ./producer
+    container_name: order-service
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP: redpanda:29092
+    ports:
+      - "8000:8000"
+
+  inventory-service:
+    build: ./consumer_inventory
+    container_name: inventory-service
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP: redpanda:29092
+
+  notification-service:
+    build: ./consumer_notification
+    container_name: notification-service
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP: redpanda:29092
