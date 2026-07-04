@@ -51,6 +51,6 @@ low-ceremony, since this is solo work and there's no shared `main` to protect).
 
 | Week | Tag | Commit |
 |------|-----|--------|
-| 1 | `week-1` | `4c4b2e8` |
+| 1 | `week-1` | `e7fa069` |
 
 To jump to any week's state: `git checkout week-N`.
