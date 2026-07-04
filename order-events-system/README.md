@@ -22,7 +22,10 @@ Each service is a standalone Maven project (`pom.xml` + `src/main/java/...`).
   `/readiness`) wired into Kubernetes startup/liveness/readiness probes
 - Containerized services (multi-stage Maven → JRE Docker builds), Kubernetes
   manifests with probes + HPA
-- A CI/CD pipeline skeleton using build → test → push → GitOps deploy
+- A CI/CD pipeline skeleton using build → test → push → GitOps deploy.
+  Build + test run on every push/PR; image publish and the deploy stage are
+  gated behind a manual `workflow_dispatch` trigger (learning mode — run them
+  on demand from the Actions tab)
 
 ## Run it locally with Docker Compose
 ```bash

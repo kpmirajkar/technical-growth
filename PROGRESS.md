@@ -74,6 +74,11 @@ see "Git checkpoints" at the bottom.
   ghcr.io. The `week-1` tag predates this fix on purpose; the CI fix is
   part of `main`'s history, and moving a published tag a third time wasn't
   worth it.
+- Learning-mode gate: image publish + deploy now run only on manual
+  `workflow_dispatch`, not on every push to `main`. Pushes/PRs still get
+  build + test. (No billing risk existed — public repo, so Actions minutes
+  are free, and the deploy job is an echo stub with no cloud behind it —
+  but pushing 3 images per commit was pointless clutter in learning mode.)
 
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory
