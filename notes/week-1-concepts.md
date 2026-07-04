@@ -5,6 +5,28 @@ trap hiding inside each one. Anchored to `order-events-system` — "I built this
 and hit this exact bug" is both the best retention device and the best
 interview answer.
 
+## 0. Queue vs. pub/sub vs. event stream — who owns replay and position?
+
+The real differentiator between messaging models isn't fan-out; it's *who
+owns the read position and whether history can be replayed*:
+
+- **Message queue** (SQS, RabbitMQ queue): delete-on-ack, competing
+  consumers. Good for task distribution / load leveling. No replay, no
+  fan-out — once one consumer takes it, it's gone.
+- **Pub/sub** (SNS, JMS topics): fans out, but *ephemeral* — a subscriber
+  that's down or not yet subscribed at publish time misses the message
+  (absent pre-provisioned durable subscriptions). No rewind.
+- **Event stream** (Kafka/Redpanda): durable, ordered, append-only log with
+  retention. Each consumer group tracks its *own* offset and reads the full
+  history at its own pace. **Replay + independent consumption position** is
+  the differentiator, not fan-out.
+
+**Trap:** "Kafka is pub/sub" undersells it. The log + consumer-owned offsets
+is what enables: catching up after downtime (notification-service down an
+hour just resumes from its committed offset), adding a brand-new consumer
+that reads history from the beginning, and reprocessing after a bug fix.
+None of those exist in classic pub/sub.
+
 ## 1. Delivery semantics are decided by operation order, not configuration
 
 The at-most-once / at-least-once / exactly-once taxonomy reduces to one
