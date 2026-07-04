@@ -83,4 +83,4 @@ We're starting the hands-on project today, in parallel with Week 1 theory below.
 ## Weekly cadence suggestion
 - Given 22+ years of experience, skip 101-level explanations — go straight to trade-offs and failure modes; use official docs/RFCs over tutorials where possible.
 - Keep every lab in the same project repo so it compounds into one strong portfolio piece rather than 12 disconnected exercises.
-- Toolchain default: Java 17 + Spring Boot 3 + Spring Kafka, Maven, JUnit 5 + Testcontainers for tests, Micrometer/Actuator for metrics — matching the `order-events-system` project already scaffolded in this folder.
+- Toolchain default: Java 21 + Spring Boot 3 + Spring Kafka, Maven, JUnit 5 + Testcontainers for tests, Micrometer/Actuator for metrics — matching the `order-events-system` project already scaffolded in this folder.

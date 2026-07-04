@@ -79,6 +79,11 @@ see "Git checkpoints" at the bottom.
   build + test. (No billing risk existed — public repo, so Actions minutes
   are free, and the deploy job is an echo stub with no cloud behind it —
   but pushing 3 images per commit was pointless clutter in learning mode.)
+- Upgraded Java 17 → 21 across all poms, Dockerfiles, CI, and docs. 21 over
+  25 (the newest LTS) because Spring Boot 3.3.2 doesn't officially support
+  25 — the path to 25 is a deliberate Boot 3.5+ bump later. Local sdkman JDK
+  is already 25, which compiles `--release 21` fine. Verified: full stack
+  rebuilt on Temurin 21 images, smoke test green, events flowing end-to-end.
 
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory

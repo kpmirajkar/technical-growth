@@ -1,6 +1,6 @@
 # Order Events System — Week 1-4 Hands-On Project
 
-A minimal but realistic event-driven system built in **Java 17 + Spring Boot 3
+A minimal but realistic event-driven system built in **Java 21 + Spring Boot 3
 + Spring Kafka**: **order-service** (producer) → Kafka/Redpanda →
 **inventory-service** (consumer/producer) → **notification-service**
 (consumer). Used throughout the 12-week roadmap (`Roadmap.md`) as the one
@@ -76,7 +76,7 @@ result, and the notification service print a simulated confirmation/failure
 email.
 
 ## Run it locally without Docker (fastest inner loop)
-Requires JDK 17 and Maven installed.
+Requires JDK 21+ and Maven installed.
 ```bash
 docker compose up redpanda redpanda-console   # just the broker
 cd producer && mvn spring-boot:run             # in one terminal
