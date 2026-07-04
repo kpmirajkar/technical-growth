@@ -32,22 +32,44 @@ order-service (API at http://localhost:8000), and both consumers. First build
 will be slow (Maven downloads dependencies inside the Docker build); subsequent
 builds are cached.
 
-Create an order:
+## API
+`order-service` exposes one endpoint. Seed stock: `WIDGET-1` = 50, `WIDGET-2` = 5,
+`WIDGET-3` = 0 (see `InventoryConsumer.java`). The HTTP response only confirms
+the order was published to Kafka — whether inventory reserves or fails it
+happens downstream, so watch the logs (below) or Redpanda Console
+(http://localhost:8080) to see the actual outcome.
+
+**`POST /orders`** — create an order
 ```bash
+# Happy path — enough stock, expect InventoryReserved downstream
 curl -X POST http://localhost:8000/orders \
   -H "Content-Type: application/json" \
   -d '{"customer_id": "cust-1", "sku": "WIDGET-1", "quantity": 2}'
-```
 
-Watch the logs:
+# Failure path — insufficient stock, expect InventoryFailed (insufficient_stock)
+curl -X POST http://localhost:8000/orders \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "cust-2", "sku": "WIDGET-2", "quantity": 10}'
+
+# Failure path — zero-stock SKU, same InventoryFailed outcome
+curl -X POST http://localhost:8000/orders \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "cust-3", "sku": "WIDGET-3", "quantity": 1}'
+```
+All three return `HTTP 200` with `{"status": "published", "event": {...}}` —
+that's Kafka accepting the publish, not the inventory decision.
+
+Run `./scripts/smoke-test.sh` to fire all three against a running stack and
+check the API responds as expected (see the script's header comment for what
+it does and doesn't cover).
+
+Watch the logs to see the actual downstream outcome:
 ```bash
 docker compose logs -f inventory-service notification-service
 ```
-You should see the inventory service reserve stock and publish a result, and
-the notification service print a simulated email.
-
-Try triggering a failure path — order more than available stock (`WIDGET-2`
-only has 5 units), and watch `InventoryFailed` flow through instead.
+You should see the inventory service reserve or fail stock and publish a
+result, and the notification service print a simulated confirmation/failure
+email.
 
 ## Run it locally without Docker (fastest inner loop)
 Requires JDK 17 and Maven installed.
@@ -92,7 +114,3 @@ kubectl -n order-events port-forward svc/order-service 8000:8000
   in Week 3.
 - The idempotency store and stock map are in-memory — replace with a real
   database before this goes anywhere near production.
-- I couldn't run Maven/Docker in my own sandbox to execute this end-to-end
-  (no outbound access to Maven Central and no Docker daemon there), so the
-  Java source compiles cleanly by inspection but hasn't been built and run —
-  worth doing a `docker compose up --build` on your machine as a first check.
