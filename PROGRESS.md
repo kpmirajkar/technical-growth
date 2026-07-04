@@ -19,6 +19,10 @@ see "Git checkpoints" at the bottom.
   Console + the three services.
 - GitHub Actions CI/CD skeleton (`.github/workflows/ci-cd.yaml`): `mvn verify`
   per service, then build/push image on `main`.
+- Documented the `order-service` API as curl examples in `README.md`
+  (happy path + both failure-stock scenarios) and added
+  `order-events-system/scripts/smoke-test.sh` to run those same requests
+  against a live stack and assert on the HTTP response.
 
 **Issues hit & fixed**
 - `consumer_inventory` and `consumer_notification` failed to build: both only
@@ -31,6 +35,14 @@ see "Git checkpoints" at the bottom.
   `.gitignore` — the initial commit accidentally included `target/` build
   output (two ~32 MB fat jars) and `__pycache__`. Added a `.gitignore`, untracked
   the artifacts, amended the not-yet-pushed commit, pushed clean.
+- `inventory.result` was published with no key, breaking per-customer ordering
+  past the first hop — and every topic was left to auto-create with 1
+  partition anyway, so keying had nothing to demonstrate. Fixed by keying the
+  `inventory.result` publish by `customer_id` (matching `orders.created`) and
+  adding explicit `NewTopic` beans (3 partitions, replicas 1) for all three
+  topics. `orders.created.dlq`'s partition count has to match
+  `orders.created`'s, since `DeadLetterPublishingRecoverer` routes to the same
+  partition number on the DLQ topic.
 
 **Verified**
 - `docker compose up --build` — all 5 containers healthy.
@@ -38,11 +50,9 @@ see "Git checkpoints" at the bottom.
   notification email logged.
 - Failure path: `POST /orders` (WIDGET-2, qty 10 > 5 in stock) →
   `InventoryFailed` (`insufficient_stock`) → failure email logged.
-
-- Documented the `order-service` API as curl examples in `README.md`
-  (happy path + both failure-stock scenarios) and added
-  `order-events-system/scripts/smoke-test.sh` to run those same requests
-  against a live stack and assert on the HTTP response.
+- Partitioning: sent repeated orders for the same `customer_id`s and used
+  `rpk topic consume` to confirm each customer lands on the same partition on
+  both `orders.created` and `inventory.result`.
 
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory
