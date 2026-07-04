@@ -49,8 +49,9 @@ see "Git checkpoints" at the bottom.
 Each finished week gets a lightweight tag on `main` (no feature branches —
 low-ceremony, since this is solo work and there's no shared `main` to protect).
 
-| Week | Tag | Commit |
-|------|-----|--------|
-| 1 | `week-1` | `e7fa069` |
+| Week | Tag |
+|------|-----|
+| 1 | `week-1` |
 
-To jump to any week's state: `git checkout week-N`.
+To jump to any week's state: `git checkout week-N`. To see what a tag points to:
+`git show week-N --stat`.
