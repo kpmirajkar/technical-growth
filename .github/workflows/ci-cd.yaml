@@ -13,6 +13,11 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    # GITHUB_TOKEN needs packages:write to push images to ghcr.io — the
+    # repo-default token is often read-only.
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         service: [producer, consumer_inventory, consumer_notification]
@@ -27,7 +32,7 @@ jobs:
           cache: "maven"
 
       - name: Build and run tests
-        working-directory: ${{ matrix.service }}
+        working-directory: order-events-system/${{ matrix.service }}
         run: mvn -B verify
 
       - name: Log in to registry
@@ -42,7 +47,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./${{ matrix.service }}
+          context: ./order-events-system/${{ matrix.service }}
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
 

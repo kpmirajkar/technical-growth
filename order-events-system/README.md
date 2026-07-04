@@ -7,9 +7,6 @@ A minimal but realistic event-driven system built in **Java 17 + Spring Boot 3
 project that grows week over week.
 
 Each service is a standalone Maven project (`pom.xml` + `src/main/java/...`).
-`producer/`, `consumer_inventory/`, and `consumer_notification/` still contain
-stale `app.py`/`requirements.txt`/`__pycache__` files from an earlier Python
-draft — they're unused, safe to delete, and can be ignored.
 
 ## What it demonstrates
 - Event-carried state transfer, keyed partitioning for per-customer ordering —

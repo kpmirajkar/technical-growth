@@ -43,6 +43,22 @@ see "Git checkpoints" at the bottom.
   topics. `orders.created.dlq`'s partition count has to match
   `orders.created`'s, since `DeadLetterPublishingRecoverer` routes to the same
   partition number on the DLQ topic.
+- The GitHub Actions workflow was dead code: it lived at
+  `order-events-system/.github/workflows/`, but GitHub only discovers
+  workflows at the *repo root* — so CI had never run on any push. Moved it to
+  `.github/workflows/`, prefixed `working-directory`/build contexts with
+  `order-events-system/`, and gave the job `packages: write` permission so
+  `GITHUB_TOKEN` can push to ghcr.io.
+- Commits were authored as `kpmirajkar@Krishnas-MacBook-Pro.local` (git's
+  hostname fallback), so GitHub couldn't attribute them. Set global
+  `user.name`/`user.email`; earlier pushed commits keep the old identity.
+- Repo hygiene: untracked the committed `.idea/` files (gitignore alone
+  doesn't untrack), deleted the leftover Python-draft files
+  (`app.py`/`requirements.txt`/`__pycache__`), and dropped the README
+  paragraph that explained them.
+- Added a warning comment on the consumers' `replicas: 1` in
+  `k8s/03-consumers.yaml`: scaling past 1 replica before the Week 2 outbox
+  forks the in-memory stock table and breaks idempotency.
 
 **Verified**
 - `docker compose up --build` — all 5 containers healthy.
