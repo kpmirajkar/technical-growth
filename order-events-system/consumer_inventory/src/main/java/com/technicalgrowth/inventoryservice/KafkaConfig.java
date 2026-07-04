@@ -1,8 +1,10 @@
 package com.technicalgrowth.inventoryservice;
 
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -16,6 +18,21 @@ import org.springframework.util.backoff.FixedBackOff;
  */
 @Configuration
 public class KafkaConfig {
+
+    // Must match orders.created's partition count (producer's KafkaTopicConfig):
+    // the recoverer below routes each failed record to the *same partition
+    // number* on the DLQ topic, so the DLQ needs at least as many partitions.
+    private static final int PARTITIONS = 3;
+
+    @Bean
+    public NewTopic ordersCreatedDlqTopic() {
+        return TopicBuilder.name("orders.created.dlq").partitions(PARTITIONS).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic inventoryResultTopic() {
+        return TopicBuilder.name("inventory.result").partitions(PARTITIONS).replicas(1).build();
+    }
 
     @Bean
     public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {

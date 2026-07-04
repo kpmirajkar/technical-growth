@@ -12,7 +12,11 @@ stale `app.py`/`requirements.txt`/`__pycache__` files from an earlier Python
 draft — they're unused, safe to delete, and can be ignored.
 
 ## What it demonstrates
-- Event-carried state transfer, keyed partitioning for per-customer ordering
+- Event-carried state transfer, keyed partitioning for per-customer ordering —
+  all three topics (`orders.created`, `orders.created.dlq`, `inventory.result`)
+  are explicitly created with 3 partitions (`NewTopic` beans), and every
+  publish is keyed by `customer_id` end-to-end, so a given customer's events
+  always land on the same partition at every hop
 - Idempotent consumption (dedup by `event_id`, `ConcurrentHashMap`-backed for now)
 - `ErrorHandlingDeserializer` + `DeadLetterPublishingRecoverer` — retries twice
   with backoff, then routes unprocessable events to `orders.created.dlq`

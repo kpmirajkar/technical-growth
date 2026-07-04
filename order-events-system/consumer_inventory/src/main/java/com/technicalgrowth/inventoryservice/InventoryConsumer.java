@@ -64,7 +64,9 @@ public class InventoryConsumer {
             );
         }
 
-        kafkaTemplate.send(OUT_TOPIC, result);
+        // Key by customer_id, matching orders.created, so a customer's events
+        // stay on the same partition end-to-end and preserve per-customer ordering.
+        kafkaTemplate.send(OUT_TOPIC, event.customerId(), result);
         System.out.printf("[inventory-service] processed order_id=%s -> %s%n", event.orderId(), result.eventType());
     }
 }
