@@ -106,6 +106,25 @@ see "Git checkpoints" at the bottom.
   before deploying consumers. Workaround locally: restart consumers (or
   wait 5 min).
 
+**Articulation drill (done 2026-07-05)**
+- Strong: delivery-semantics taxonomy (operation-order framing, effectively-
+  once), order-accepted vs. order-fulfilled boundary, temporal decoupling
+  under consumer outage, partition-count-as-parallelism-ceiling (including
+  increase-only and the 7-idle-replicas consequence).
+- Rehearse before Week 4's whiteboard drill:
+  1. **Replay mechanics** — reached for `auto-offset-reset` three times; the
+     crisp answer is: retention-based durable log (consuming never deletes,
+     default 7 days) + reset the group's committed offsets
+     (`kafka-consumer-groups --reset-offsets`) or attach a new group.
+  2. **Durability of acked writes** — never said "the order is lost" for
+     acked-then-disk-dead on RF=1, and didn't quote the trio (RF=3 +
+     min.insync.replicas=2 + acks=all) or its trade-off (producers block on
+     second broker loss — consistency over availability).
+  3. **Tell the war story** — the unkeyed `inventory.result` bug was teed up
+     and left untold. 60-second version: keyed hop 1, unkeyed hop 2,
+     ordering broke silently (no metric watches key→partition continuity),
+     found by review, fix = key every hop.
+
 **Next (Week 2)**
 - Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory
   `processedEventIds` set with a real idempotency mechanism.
