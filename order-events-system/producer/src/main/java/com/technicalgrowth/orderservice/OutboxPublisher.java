@@ -39,6 +39,10 @@ public class OutboxPublisher {
         for (OutboxEvent event : pending) {
             try {
                 kafkaTemplate.send(TOPIC, event.getEventKey(), event.getPayload()).get();
+                // No explicit save(): `event` is a managed entity (loaded
+                // inside this @Transactional method), so Hibernate's dirty
+                // checking flushes this change as an UPDATE at commit —
+                // only works because it never leaves this transaction.
                 event.setPublishedAt(Instant.now());
             } catch (Exception e) {
                 System.out.printf("[order-service] outbox publish failed for event_id=%s, will retry: %s%n",
