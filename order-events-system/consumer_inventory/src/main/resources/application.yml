@@ -1,4 +1,17 @@
 spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/inventorydb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      # Fine for the lab; production would use Flyway/Liquibase migrations.
+      ddl-auto: update
+    # Let Hibernate create the schema before data.sql seeds it.
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:

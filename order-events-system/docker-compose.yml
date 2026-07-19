@@ -30,13 +30,36 @@ services:
     depends_on:
       - redpanda
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orderdb
+    # init script also creates inventorydb — one container, one database per
+    # service, preserving service-owned data without running two Postgreses.
+    volumes:
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
   order-service:
     build: ./producer
     container_name: order-service
     depends_on:
-      - redpanda
+      redpanda:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP: redpanda:29092
+      DB_URL: jdbc:postgresql://postgres:5432/orderdb
     ports:
       - "8000:8000"
 
@@ -44,9 +67,13 @@ services:
     build: ./consumer_inventory
     container_name: inventory-service
     depends_on:
-      - redpanda
+      redpanda:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP: redpanda:29092
+      DB_URL: jdbc:postgresql://postgres:5432/inventorydb
 
   notification-service:
     build: ./consumer_notification

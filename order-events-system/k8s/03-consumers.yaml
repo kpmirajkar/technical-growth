@@ -4,9 +4,9 @@ metadata:
   name: inventory-service
   namespace: order-events
 spec:
-  # DO NOT scale past 1 until the Week 2 Postgres outbox lands: the stock
-  # table and event_id dedup set live in instance memory, so a second replica
-  # forks inventory state and breaks idempotency across rebalances.
+  # Safe to scale up to 3 (partition count) since Week 2 moved stock and
+  # dedup into Postgres — but these manifests don't deploy Postgres yet, so
+  # keep at 1 until the k8s data story lands (Week 5+).
   replicas: 1
   selector:
     matchLabels:

@@ -1,8 +1,12 @@
 package com.technicalgrowth.orderservice;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,32 +18,53 @@ import java.util.UUID;
 @RestController
 public class OrderController {
 
-    private static final String TOPIC = "orders.created";
+    private final OrderRepository orders;
+    private final OutboxRepository outbox;
+    private final ObjectMapper objectMapper;
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-
-    public OrderController(KafkaTemplate<String, Object> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
+    public OrderController(OrderRepository orders, OutboxRepository outbox, ObjectMapper objectMapper) {
+        this.orders = orders;
+        this.outbox = outbox;
+        this.objectMapper = objectMapper;
     }
 
+    /**
+     * Transactional outbox: the order row and its OrderCreated event are
+     * written in ONE database transaction — no dual write to DB + Kafka.
+     * OutboxPublisher relays the event to Kafka within ~500ms. HTTP 200 here
+     * means "order accepted and durably recorded", not "event published".
+     */
     @PostMapping("/orders")
-    public Map<String, Object> createOrder(@Valid @RequestBody OrderRequest request) throws Exception {
+    @Transactional
+    public Map<String, Object> createOrder(@Valid @RequestBody OrderRequest request) throws JsonProcessingException {
+        String orderId = UUID.randomUUID().toString();
         String eventId = UUID.randomUUID().toString();
+        Instant now = Instant.now();
+
+        OrderEntity order = new OrderEntity(
+                orderId, request.customerId(), request.sku(), request.quantity(), "PLACED", now);
+        orders.save(order);
 
         OrderCreatedEvent event = new OrderCreatedEvent(
                 eventId,
                 "OrderCreated",
-                Instant.now().toString(),
-                UUID.randomUUID().toString(),
+                now.toString(),
+                orderId,
                 request.customerId(),
                 request.sku(),
                 request.quantity()
         );
+        outbox.save(new OutboxEvent(
+                eventId, orderId, "OrderCreated", request.customerId(),
+                objectMapper.writeValueAsString(event), now));
 
-        // Key by customer_id so all events for a customer land on the same
-        // partition — this preserves per-customer ordering.
-        kafkaTemplate.send(TOPIC, request.customerId(), event).get();
+        return Map.of("status", "accepted", "event", event);
+    }
 
-        return Map.of("status", "published", "event", event);
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<OrderEntity> getOrder(@PathVariable String id) {
+        return orders.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

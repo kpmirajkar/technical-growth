@@ -4,11 +4,11 @@
 # Start the stack first: docker compose up --build -d
 # Then run:              ./scripts/smoke-test.sh
 #
-# Scope: checks that POST /orders responds correctly for the happy path and
-# both failure-stock scenarios. It does NOT verify the downstream Kafka outcome
-# (InventoryReserved/InventoryFailed) — that still needs `docker compose logs`
-# or Redpanda Console, since order-service's response only confirms the publish,
-# not the inventory decision.
+# Scope: checks POST /orders (happy path + both failure-stock scenarios) and
+# GET /orders/{id} (order persisted with status). It does NOT verify the
+# downstream Kafka outcome (InventoryReserved/InventoryFailed) — that still
+# needs `docker compose logs` or Redpanda Console. Since the Week 2 outbox,
+# POST means "accepted and durably recorded"; publishing happens async.
 
 set -euo pipefail
 
@@ -19,12 +19,16 @@ PASS=0
 FAIL=0
 
 check() {
-  local name="$1" expected_status="$2" body="$3" expect_substr="$4"
+  local name="$1" expected_status="$2" method="$3" path="$4" body="$5" expect_substr="$6"
   local status response_body
 
-  status="$(curl -s -o "$RESPONSE_FILE" -w '%{http_code}' -X POST "$BASE_URL/orders" \
-    -H "Content-Type: application/json" \
-    -d "$body")"
+  if [[ "$method" == "GET" ]]; then
+    status="$(curl -s -o "$RESPONSE_FILE" -w '%{http_code}' "$BASE_URL$path")"
+  else
+    status="$(curl -s -o "$RESPONSE_FILE" -w '%{http_code}' -X POST "$BASE_URL$path" \
+      -H "Content-Type: application/json" \
+      -d "$body")"
+  fi
   response_body="$(cat "$RESPONSE_FILE")"
 
   if [[ "$status" == "$expected_status" && "$response_body" == *"$expect_substr"* ]]; then
@@ -40,17 +44,25 @@ check() {
 echo "Running smoke tests against $BASE_URL ..."
 echo
 
-check "happy path (WIDGET-1, enough stock)" 200 \
+check "happy path (WIDGET-1, enough stock)" 200 POST /orders \
   '{"customer_id": "cust-smoke-1", "sku": "WIDGET-1", "quantity": 1}' \
-  '"status":"published"'
+  '"status":"accepted"'
 
-check "insufficient stock (WIDGET-2, qty > 5)" 200 \
+# The happy-path response embeds the order_id — read it for the GET check.
+ORDER_ID="$(python3 -c "import json,sys; print(json.load(sys.stdin)['event']['order_id'])" < "$RESPONSE_FILE")"
+
+check "insufficient stock (WIDGET-2, qty > 5)" 200 POST /orders \
   '{"customer_id": "cust-smoke-2", "sku": "WIDGET-2", "quantity": 999}' \
-  '"status":"published"'
+  '"status":"accepted"'
 
-check "zero-stock sku (WIDGET-3)" 200 \
+check "zero-stock sku (WIDGET-3)" 200 POST /orders \
   '{"customer_id": "cust-smoke-3", "sku": "WIDGET-3", "quantity": 1}' \
-  '"status":"published"'
+  '"status":"accepted"'
+
+check "order persisted (GET /orders/{id})" 200 GET "/orders/$ORDER_ID" "" \
+  '"status":"PLACED"'
+
+check "unknown order id is 404" 404 GET "/orders/does-not-exist" "" ""
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

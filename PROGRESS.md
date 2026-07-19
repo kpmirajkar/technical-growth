@@ -125,9 +125,50 @@ see "Git checkpoints" at the bottom.
      ordering broke silently (no metric watches key→partition continuity),
      found by review, fix = key every hop.
 
-**Next (Week 2)**
-- Add a Postgres-backed outbox table (Spring Data JPA), replace the in-memory
-  `processedEventIds` set with a real idempotency mechanism.
+---
+
+## Week 2 — Event-Driven Patterns (outbox + real idempotency)
+**Status:** Lab done — 2026-07-19. Theory discussion pending.
+
+**Shipped**
+- Postgres in docker-compose (one container, `orderdb` + `inventorydb` via
+  init script — one database per service, no shared tables).
+- Transactional outbox in `order-service`: `POST /orders` writes the order
+  row and the serialized `OrderCreated` event to an `outbox` table in ONE
+  transaction; a `@Scheduled` `OutboxPublisher` (500ms) relays pending rows
+  to Kafka and marks them published. Producer value-serializer switched to
+  StringSerializer — the relay publishes the payload column verbatim
+  (JsonSerializer would double-encode an already-JSON string).
+- API change with the pattern: 200 now means "accepted and durably
+  recorded", response `status` is `accepted` (was `published`); new
+  `GET /orders/{id}` returns the persisted order. README curls + smoke test
+  extended per convention (5 checks now, incl. persistence + 404).
+- DB-enforced idempotency in `inventory-service`: `processed_events` table
+  (PK on event_id = the dedup), stock moved from in-memory map to a `stock`
+  table seeded by `data.sql`, decrement is an atomic conditional
+  `UPDATE ... WHERE quantity >= ?` (read-then-write would lose updates under
+  concurrent consumers). Listener is `@Transactional`: dedup insert + stock
+  change commit or roll back together.
+
+**Verified**
+- Smoke test 5/5; orders + outbox rows visible in Postgres with
+  `published_at` set; stock decremented exactly once; emails flowing.
+- Duplicate injection: replayed the exact same event (same event_id) via
+  `rpk topic produce` — consumer logged "duplicate ... skipping", stock
+  unchanged. Dedup also survived a consumer restart (HashSet never could).
+- Hit the cold-broker partition race AGAIN during verification (consumers
+  joined before topics expanded to 3 partitions; 2 of 3 events invisible
+  until consumer restart) — the Week 1 finding reproduced exactly.
+
+**Known gaps (deliberate, documented in README)**
+- Hop 2 dual-write: inventory publishes `inventory.result` inside its DB
+  transaction — same problem the outbox solved at hop 1; fix = second outbox.
+- Poller vs CDC (Debezium), `ddl-auto: update` vs Flyway — production notes.
+
+**Next**
+- Week 2 theory discussion: event notification vs event-carried state
+  transfer vs event sourcing; CQRS; saga choreography vs orchestration.
+- Week 3: schema registry, kill the duplicated event classes.
 
 ---
 
