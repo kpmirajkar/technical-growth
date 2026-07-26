@@ -25,9 +25,9 @@ see "Git checkpoints" at the bottom.
   against a live stack and assert on the HTTP response.
 - Theory study sheet: `notes/week-1-concepts.md` — messaging semantics +
   Kafka mechanics distilled as interview one-pager #1 (the Roadmap's Week 4/
-  8/12 "1-pager" artifacts start here). Mermaid diagrams added later
-  alongside Week 2's: messaging models, key→partition routing (incl. the
-  unkeyed-hop-2 bug), parallelism ceiling, ISR/acks durability, DLQ paths.
+  8/12 "1-pager" artifacts start here). Later restructured into three layers
+  (story / self-test / recall card) with Mermaid diagrams — see the note
+  under Week 2 on why compression alone wasn't working.
 
 **Issues hit & fixed**
 - `consumer_inventory` and `consumer_notification` failed to build: both only
@@ -174,8 +174,23 @@ see "Git checkpoints" at the bottom.
   Mermaid diagrams (outbox flow, choreography vs orchestration) which render
   natively on GitHub.
 
+**Articulation drill (attempted 2026-07-19)**
+- Named dual-write unprompted and self-corrected the `orders`-vs-`outbox`
+  event-log mix-up. But the **at-least-once → duplicate → idempotency**
+  chain didn't come: crash-after-send was read as a *lost* message rather
+  than a repeated one, three times. ECST was also reached for as a
+  catch-all. Drill stopped early rather than grinding.
+- Root cause was the study material, not just recall. The compressed
+  sheets asserted conclusions without building them, so after a week away
+  they couldn't be re-derived. **Notes restructured into three layers** —
+  Part 1 narrative with worked traces (real numbers, step-by-step crash
+  sequences), Part 2 self-test with answers, Part 3 the old recall card —
+  plus `notes/00-start-here.md`, a spine showing how each week's problem
+  grew out of the previous week's solution. Applied to Weeks 1 and 2.
+
 **Next**
-- Week 2 articulation drill (interview-style Q&A on the above), on request.
+- Re-run the Week 2 drill after re-reading Part 1 (use Part 2 self-test
+  first to find gaps cheaply).
 - Week 3: schema registry, kill the duplicated event classes.
 
 ---
