@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 1 — Messaging Semantics &amp; Kafka Mechanics</title>
+<style>
+:root{--bg:#fdfdfc;--fg:#1f2328;--muted:#5b6470;--line:#e3e5e8;--accent:#0b6cc4;
+--code-bg:#f4f5f7;--card:#fff;--warn-bg:#fff8e6;--warn-br:#e8b931;--quote:#f0f4f9}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#e6e8ea;--muted:#9aa4b0;
+--line:#2c3238;--accent:#5ab0ff;--code-bg:#1d2227;--card:#181c20;--warn-bg:#2a2410;
+--warn-br:#8a7320;--quote:#1a2028}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px 96px}
+nav.top{position:sticky;top:0;z-index:9;background:var(--bg);border-bottom:1px solid var(--line);
+padding:12px 0;margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap}
+nav.top a{font-size:14px;text-decoration:none;color:var(--muted);padding:5px 11px;
+border:1px solid var(--line);border-radius:99px}
+nav.top a:hover{color:var(--accent);border-color:var(--accent)}
+nav.top a.active{background:var(--accent);border-color:var(--accent);color:#fff}
+h1{font-size:2em;line-height:1.25;margin:1.2em 0 .5em;letter-spacing:-.02em}
+h2{font-size:1.42em;margin:1.9em 0 .5em;padding-bottom:.28em;border-bottom:1px solid var(--line);
+letter-spacing:-.01em}
+h3{font-size:1.13em;margin:1.7em 0 .4em}
+h1:first-of-type{margin-top:.6em}
+p{margin:.85em 0}
+a{color:var(--accent)}
+ul,ol{padding-left:1.4em;margin:.8em 0}
+li{margin:.42em 0}
+code{background:var(--code-bg);padding:.14em .38em;border-radius:4px;font-size:.88em;
+font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+overflow-x:auto;margin:1.1em 0}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.55}
+pre.mermaid{background:var(--card);text-align:center;line-height:1.4}
+blockquote{margin:1.2em 0;padding:.9em 1.1em;background:var(--quote);
+border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.94em;display:block;
+overflow-x:auto}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;
+padding:12px 16px;margin:1.2em 0}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:.6em;padding-bottom:.6em;border-bottom:1px solid var(--line)}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 18px;
+margin:1.6em 0}
+.toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+margin-bottom:8px}
+.toc ul{margin:0;padding-left:1.1em}
+.toc li{margin:.2em 0;font-size:.93em}
+.built{color:var(--muted);font-size:13px;margin-top:3em;padding-top:1.2em;
+border-top:1px solid var(--line)}
+@media(max-width:640px){body{font-size:15px}.wrap{padding:0 16px 64px}h1{font-size:1.6em}}
+</style>
+</head><body>
+<div class="wrap">
+<nav class="top"><a href="00-start-here.html">Start Here</a><a href="week-1-concepts.html" class='active'>Week 1</a><a href="week-2-concepts.html">Week 2</a></nav>
+<div class="toc"><div class="toc-title">On this page</div><ul><li><a href="#part-1-the-story">Part 1 — The story</a></li><li><a href="#11-why-a-log-and-not-a-queue">1.1 Why a log, and not a queue</a></li><li><a href="#12-replay-what-actually-makes-it-possible">1.2 Replay: what actually makes it possible ⚠️</a></li><li><a href="#13-delivery-semantics-are-decided-by-operation-order">1.3 Delivery semantics are decided by operation order</a></li><li><a href="#14-ordering-lives-in-the-partition-and-the-key-chooses-it">1.4 Ordering lives in the partition — and the key chooses it</a></li><li><a href="#15-consumer-groups-one-logical-subscriber-with-a-hard-ceiling">1.5 Consumer groups: one logical subscriber, with a hard ceiling</a></li><li><a href="#16-durability-acks-is-a-contract-with-the-isr">1.6 Durability: acks is a contract with the ISR ⚠️</a></li><li><a href="#17-poison-messages-retries-and-the-dlq">1.7 Poison messages, retries, and the DLQ</a></li><li><a href="#part-2-self-test">Part 2 — Self-test</a></li><li><a href="#part-3-recall-card">Part 3 — Recall card</a></li></ul></div>
+<h1 id="week-1-messaging-semantics-kafka-mechanics">Week 1 — Messaging Semantics &amp; Kafka Mechanics</h1>
+<p>Read <a href="00-start-here.md">00-start-here.md</a> first if you've been away.</p>
+<p><strong>Part 1</strong> is the narrative — read it when learning or returning after a gap. <strong>Part 2</strong> is self-test. <strong>Part 3</strong> is the dense recall card for interview eve.</p>
+<blockquote><p><strong>Where this week comes from.</strong> It's the foundation: how facts move between services at all. Everything later — the outbox, idempotency, sagas — exists to work around the guarantees this week does <em>not</em> give you.</p></blockquote>
+<hr>
+<h1 id="part-1-the-story">Part 1 — The story</h1>
+<h2 id="11-why-a-log-and-not-a-queue">1.1 Why a log, and not a queue</h2>
+<p>Three messaging models get lumped together as "async messaging." The real difference isn't fan-out — it's <strong>who owns the read position, and whether history survives being read</strong>.</p>
+<pre class="mermaid">flowchart TB
+    subgraph queue["Message queue — competing consumers, delete on ack"]
+        direction LR
+        QP["producer"] --&gt; Q[["queue"]]
+        Q --&gt;|"msg 1"| QA["consumer A"]
+        Q --&gt;|"msg 2"| QB["consumer B"]
+    end
+    subgraph pubsub["Pub/sub — fan-out, but ephemeral"]
+        direction LR
+        PP["producer"] --&gt; PT(["topic"])
+        PT --&gt; PA["subscriber A"]
+        PT --&gt; PB["subscriber B is down&lt;br/&gt;misses it forever"]
+    end
+    subgraph stream["Event stream — durable log, consumer-owned offsets"]
+        direction LR
+        SP["producer"] --&gt; SL["log: 0 1 2 3 4 5 6 ..."]
+        SL --&gt; SA["group A at offset 6"]
+        SL --&gt; SB["group B at offset 2&lt;br/&gt;catching up after downtime"]
+        SL --&gt; SC["new group C&lt;br/&gt;replays from 0"]
+    end</pre>
+<ul><li><strong>Message queue</strong> (SQS, RabbitMQ queue): the broker deletes the message once it's acknowledged, and competing consumers split the work. Great for task distribution. But there's no fan-out and no history — once consumer A takes message 1, it's gone.</li><li><strong>Pub/sub</strong> (SNS, JMS topics): fans out to every subscriber, but it's <em>ephemeral</em>. A subscriber that's down at publish time simply misses the message. There's no rewind.</li><li><strong>Event stream</strong> (Kafka/Redpanda): an append-only, durable, ordered log with a retention window. <strong>Reading does not delete.</strong> Each consumer group tracks its <em>own</em> position, so three groups can sit at three different offsets in the same topic simultaneously.</li></ul>
+<p><strong>Why this matters for your system:</strong> <code>inventory-service</code> and <code>notification-service</code> are separate consumer groups reading independently. That's what makes the Black Friday story work — inventory can be down for two hours and then resume from its own committed offset, because the log kept everything and nobody else's progress affected it.</p>
+<p><strong>Trap:</strong> saying "Kafka is pub/sub" undersells it badly. The log plus consumer-owned offsets is what enables catching up after downtime, adding a brand-new consumer that reads all history, and reprocessing after a bug fix. None of those exist in classic pub/sub.</p>
+<h2 id="12-replay-what-actually-makes-it-possible">1.2 Replay: what actually makes it possible ⚠️</h2>
+<p><strong>This is the section that didn't land in the drill — three attempts, three misses. Read it slowly.</strong></p>
+<p>The question "how do I replay?" has a two-part answer, and the mistake is answering with the wrong half.</p>
+<p><strong>Part one — why replay is even possible: retention.</strong></p>
+<p>Kafka keeps records on disk according to a <em>retention policy</em> — <code>retention.ms</code> (default <strong>7 days</strong>) and/or <code>retention.bytes</code> — and <strong>consumption has nothing to do with it.</strong> A message read by ten consumer groups and a message read by nobody are deleted at exactly the same time. That's the property a queue doesn't have: in a queue, reading destroys.</p>
+<p>So the data is sitting there. Replay is just <em>moving your read position backwards</em>.</p>
+<p><strong>Part two — how you actually move: the committed offset.</strong></p>
+<p>An offset is a per-<code>(group, partition)</code> bookmark stored in the <code>__consumer_offsets</code> topic. To replay, you change that bookmark.</p>
+<p><strong>Worked scenario.</strong> <code>inventory-service</code> processed three days of orders, but a bug corrupted the results. You need it to reprocess those three days. Your options:</p>
+<ol><li><strong>Reset the existing group's committed offsets.</strong> Stop the consumers (the group must be inactive), then: ``<code>bash kafka-consumer-groups --bootstrap-server ... \ --group inventory-service --topic orders.created \ --reset-offsets --to-datetime 2026-07-02T00:00:00.000 --execute </code>`<code> Restart, and it re-reads from that timestamp. (</code>--to-earliest<code>, </code>--shift-by -1000<code>, and </code>--to-offset N` are the other common variants.)</li><li><strong>Attach a brand-new consumer group.</strong> A new <code>group.id</code> has no committed offset at all, so it starts wherever <code>auto-offset-reset</code> says. This is the go-to when you want to reprocess <em>without</em> disturbing the live consumer.</li><li><strong>Seek programmatically</strong> — <code>consumer.seek(partition, offset)</code> inside a <code>ConsumerSeekAware</code> listener, for surgical cases.</li></ol>
+<p><strong>The trap that caught you three times.</strong> <code>auto-offset-reset: earliest</code> answers exactly one question:</p>
+<blockquote><p><em>"This group has <strong>no committed offset</strong>. Where should it start?"</em></p></blockquote>
+<p>That's it. It fires for a brand-new group, or when the committed offset has aged out of retention. For a group that already has a committed offset — which is every running consumer — <strong>the setting is ignored entirely</strong>. Changing it and restarting does nothing. It is not a replay button; it's a first-run default.</p>
+<p>Note how option 2 above works <em>because of</em> this: the new group has no offset, so <code>earliest</code> applies and it reads from the start. Same setting, but it's the <em>newness of the group</em> doing the work, not the setting overriding anything.</p>
+<p><strong>The one-sentence answer to have ready:</strong></p>
+<blockquote><p><em>Kafka retains the log by time or size policy regardless of consumption — reading never deletes — so to replay I reset the consumer group's committed offsets with <code>kafka-consumer-groups --reset-offsets</code>, or attach a new group. <code>auto-offset-reset</code> only decides where a group with no committed offset begins.</em></p></blockquote>
+<h2 id="13-delivery-semantics-are-decided-by-operation-order">1.3 Delivery semantics are decided by operation order</h2>
+<p>The at-most-once / at-least-once / exactly-once taxonomy sounds like a config setting. It isn't. It reduces to one question: <strong>in what order do you process the message and commit the offset?</strong></p>
+<table><thead><tr><th>Order of operations</th><th>Crash consequence</th><th>Name</th></tr></thead><tbody><tr><td>commit offset → then process</td><td>work never done, message never redelivered</td><td><strong>at-most-once</strong> (loses)</td></tr><tr><td>process → then commit offset</td><td>processed, but redelivered on restart</td><td><strong>at-least-once</strong> (duplicates)</td></tr><tr><td>both atomically</td><td>neither happens alone</td><td><strong>exactly-once</strong></td></tr></tbody></table>
+<p>Your consumers are at-least-once: Spring Kafka's default commits after the listener returns. That's why dedup isn't defensive boilerplate — it's the mandatory second half of the choice.</p>
+<p><strong>Trap:</strong> "exactly-once" is exactly-once <strong>within Kafka's log</strong>. Kafka transactions can atomically bind "I consumed offset X and produced record Y." The moment your consumer touches the outside world — an email API, a payment call — no Kafka transaction protects you. If <code>notification-service</code> called a real email provider, a rebalance-triggered reprocess would send a second email, transactions or not.</p>
+<p><strong>The senior framing:</strong> real systems run <strong>at-least-once + idempotent consumers = effectively-once</strong>. That's the sentence to say.</p>
+<p><strong>Two dedup layers, often confused:</strong></p>
+<ul><li><strong>Broker-level idempotent producer</strong> (<code>enable.idempotence</code>, on by default in modern clients): the broker dedups by <code>(producer_id, sequence_number)</code>. This stops <em>retried writes</em> — you sent it, the ack got lost in the network, you retried, and the broker recognises the duplicate.</li><li><strong>Application-level dedup by business key</strong> (your <code>event_id</code>): this stops <em>reprocessing</em> — crashes, rebalances, redeliveries.</li></ul>
+<p>Different failure modes. You need both, and they don't substitute.</p>
+<h2 id="14-ordering-lives-in-the-partition-and-the-key-chooses-it">1.4 Ordering lives in the partition — and the key chooses it</h2>
+<p>Kafka guarantees ordering <strong>within a partition only</strong>. There is no topic-wide ordering, ever. So every ordering question is really a <em>key</em> question, because the key decides the partition: <code>hash(key) % partition_count</code>.</p>
+<pre class="mermaid">flowchart TB
+    subgraph keyed["Keyed by customer_id — per-customer order preserved"]
+        direction LR
+        KA["cust-a: e1 e2 e3"] --&gt;|"hash(cust-a) % 3"| KP2["partition 2&lt;br/&gt;e1 e2 e3 in order"]
+        KB["cust-b: e1 e2"] --&gt;|"hash(cust-b) % 3"| KP1["partition 1&lt;br/&gt;e1 e2 in order"]
+    end
+    subgraph unkeyed["Unkeyed — the hop-2 bug we shipped"]
+        direction LR
+        UA["cust-a: e1 e2 e3"] --&gt; UP0["partition 0 — e1"]
+        UA --&gt; UP1["partition 1 — e2"]
+        UA --&gt; UP2["partition 2 — e3"]
+    end</pre>
+<p>The key does three jobs at once: it sets the <strong>ordering scope</strong> (per-customer here), the <strong>parallelism grain</strong>, and the <strong>hotspot risk</strong> (one whale customer = one hot partition).</p>
+<h3 id="the-war-story-tell-this-unprompted">The war story — tell this unprompted</h3>
+<p>This is your best interview asset, and it went untold in the drill. The 60-second version:</p>
+<blockquote><p><em>We keyed <code>orders.created</code> by <code>customer_id</code>, so a customer's events stayed ordered. But at the second hop, <code>inventory-service</code> published <code>inventory.result</code> with <strong>no key</strong> — so one customer's results round-robined across all three partitions and were consumed concurrently, in any order. The guarantee we'd designed for silently stopped being true one hop in.</em></p>
+<p><em>Nothing alerted. No metric watches "are this key's events still landing on one partition" — it isn't an error, it's just a different partition. We found it in review, not from monitoring. The fix was to key every hop by <code>customer_id</code>. The lesson: an ordering guarantee has to survive <strong>every</strong> hop, and its absence is invisible.</em></p></blockquote>
+<p><strong>Second trap: partition count is a one-way door.</strong> Adding partitions changes <code>hash(key) % N</code> for every existing key, so a customer whose history sits on partition 1 starts landing on partition 4. Ordering continuity breaks silently, and you can never reduce the count. Choose it up front, sized for a target scale.</p>
+<h2 id="15-consumer-groups-one-logical-subscriber-with-a-hard-ceiling">1.5 Consumer groups: one logical subscriber, with a hard ceiling</h2>
+<p>Within a group, each partition is assigned to exactly <strong>one</strong> member. Across groups, every group reads everything independently.</p>
+<pre class="mermaid">flowchart LR
+    subgraph topic["orders.created — 3 partitions"]
+        TP0["p0"]
+        TP1["p1"]
+        TP2["p2"]
+    end
+    TP0 --&gt; R1["inventory replica 1"]
+    TP1 --&gt; R2["inventory replica 2"]
+    TP2 --&gt; R3["inventory replica 3"]
+    IDLE["replicas 4-10:&lt;br/&gt;assigned nothing, burn money"]
+    topic -.-&gt;|"separate group,&lt;br/&gt;reads everything independently"| NOTIF["notification-service"]</pre>
+<p><strong>Partition count is therefore your parallelism ceiling.</strong> Your topics have 3 partitions, so scaling <code>inventory-service</code> to 10 replicas gets you 3 working consumers and 7 idle ones. This is a real constraint for the HPA work in Weeks 5–7 — autoscaling a consumer past its partition count does nothing.</p>
+<p><strong>Rebalancing, and the trap interviewers love.</strong> A rebalance redistributes partitions when membership changes — but membership changes on <em>perceived</em> death too. If your listener takes longer than <code>max.poll.interval.ms</code> (default 5 minutes) to return, the coordinator assumes the consumer is dead, kicks it out, and rebalances. Consumption pauses on the affected partitions, and in-flight work gets reprocessed by whoever picks up the partition.</p>
+<p><strong>So slow processing <em>causes</em> duplicates.</strong> That's the non-obvious link: performance problems become correctness problems in a consumer group. Cooperative-sticky assignment (Spring Kafka's default since 2.7) softens the stop-the-world pause but doesn't eliminate it.</p>
+<h2 id="16-durability-acks-is-a-contract-with-the-isr">1.6 Durability: <code>acks</code> is a contract with the ISR ⚠️</h2>
+<p><strong>Second drill gap. The thing you never said out loud was "the order is lost." Say it here.</strong></p>
+<p><strong>ISR</strong> = In-Sync Replicas: the set of replicas currently caught up with the leader. It's dynamic — a follower that falls behind is <em>removed</em> from the ISR and re-added when it catches up.</p>
+<p><code>acks=all</code> means: <em>the leader acknowledges once every member of the <strong>current ISR</strong> has the record.</em> Read that carefully — it's "all of the ISR," not "all replicas," and not "at least N copies."</p>
+<pre class="mermaid">flowchart TB
+    subgraph safe["RF=3 + min.insync.replicas=2 + acks=all"]
+        direction LR
+        P1["producer"] --&gt; L1["leader"]
+        L1 --&gt; FA["follower&lt;br/&gt;in ISR"]
+        L1 --&gt; FB["follower&lt;br/&gt;in ISR"]
+        FA -.-&gt;|"ack once 2 replicas hold it"| P1
+    end
+    subgraph today["This project today: RF=1"]
+        direction LR
+        P2["producer&lt;br/&gt;acks=all"] --&gt; L2["leader&lt;br/&gt;ISR = itself only"]
+        L2 -.-&gt;|"acked after 1 copy"| P2
+        L2 --&gt;|"disk dies"| GONE["order is GONE&lt;br/&gt;customer already saw HTTP 200"]
+    end</pre>
+<p><strong>Trace it on your actual system.</strong> Your topics are created with <code>.replicas(1)</code>, and your producer sets <code>acks: all</code>:</p>
+<pre><code>1. POST /orders → order-service publishes with acks=all
+2. Leader is the only replica, so ISR = {leader}
+3. Leader writes to its log and acks   ← "all of the ISR" = 1 copy
+4. HTTP 200 returned. Customer sees a confirmation.
+5. ⚡ that broker's disk fails
+→ THE ORDER IS PERMANENTLY LOST.
+  It exists nowhere. The customer holds a confirmation for an order
+  no system has ever heard of.</code></pre>
+<p><code>acks=all</code> with RF=1 is <code>acks=1</code> wearing a costume. Saying this about your own project, unprompted, is a strong signal — it shows you read configuration as a <em>system property</em>, not a checkbox.</p>
+<p><strong>The trio — recite all three together, because any one alone is meaningless:</strong></p>
+<blockquote><p><strong>RF=3 + <code>min.insync.replicas=2</code> + <code>acks=all</code></strong></p></blockquote>
+<ul><li><strong>RF=3</strong> — three copies exist.</li><li><strong><code>min.insync.replicas=2</code></strong> — the producer's write is <em>rejected</em> unless at least 2 replicas are in the ISR. This is the piece that stops <code>acks=all</code> from silently degrading: without it, if followers lag and the ISR shrinks to just the leader, <code>acks=all</code> quietly becomes a single-copy write and you'd never know.</li><li><strong><code>acks=all</code></strong> — wait for the (now guaranteed ≥2) ISR members.</li></ul>
+<p><strong>And the trade-off, which is the part that gets asked:</strong> one broker can die with zero acked-data loss and writes continue. When a <strong>second</strong> broker dies, the ISR drops below 2 and <strong>producers start failing</strong> — the cluster refuses writes rather than accept unsafe ones. That's deliberately choosing consistency over availability.</p>
+<p><strong>Unclean leader election</strong> is the same dial, made explicit: allow an out-of-ISR (lagging) replica to become leader and the cluster stays available, but you can lose <strong>already-acknowledged</strong> writes. Default is <code>false</code>, and it should stay that way unless you truly prefer availability to correctness.</p>
+<h2 id="17-poison-messages-retries-and-the-dlq">1.7 Poison messages, retries, and the DLQ</h2>
+<p>A single record that can never be processed will, if handled naively, block its partition <strong>forever</strong> — the consumer retries, fails, retries, and no record behind it makes progress. That's the failure mode the whole retry/DLQ apparatus exists to prevent.</p>
+<pre class="mermaid">flowchart LR
+    REC["record arrives"] --&gt; DES{"ErrorHandlingDeserializer"}
+    DES --&gt;|"cannot deserialize&lt;br/&gt;(not retryable — skips retries)"| DLQ[("orders.created.dlq")]
+    DES --&gt;|"ok"| LIS{"listener"}
+    LIS --&gt;|"throws"| RETRY["retry x2, 1s backoff"]
+    RETRY --&gt;|"still failing"| DLQ
+    LIS --&gt;|"ok"| DONE["processed, offset committed"]</pre>
+<p>Your wiring: <code>DefaultErrorHandler</code> with <code>FixedBackOff(1000L, 2)</code> and a <code>DeadLetterPublishingRecoverer</code> routing to <code>orders.created.dlq</code> (and <code>inventory.result.dlq</code> at hop 2).</p>
+<p><strong>Note the asymmetry in that diagram.</strong> A malformed payload goes <strong>straight</strong> to the DLQ with no retries, because <code>DefaultErrorHandler</code> classifies <code>DeserializationException</code> as fatal — retrying a byte sequence that will never parse is pointless. Only <em>listener</em> exceptions get the backoff.</p>
+<p><strong>Why <code>ErrorHandlingDeserializer</code> must wrap the deserializer:</strong> deserialization happens <em>before</em> your listener code runs. Without the wrapper, the failure occurs deep inside the consumer's poll loop where your error handler can't reach it. The wrapper catches it and turns it into something the error handler can route.</p>
+<p><strong>Two things to have ready:</strong></p>
+<ul><li><strong>A DLQ with no consumer is a write-only graveyard.</strong> "What happens to messages after they land in the DLQ?" is the standard follow-up, and the honest answer for this project today is <em>"nothing — no monitoring, no replay path; that's Week 8 observability work."</em> Note also that DLQ payloads here are base64-wrapped by the serializer, so a replay tool must decode.</li><li><strong>Consumer lag is the metric that ties it all together.</strong> Lag growing = consuming slower than producing. It's the first thing you'd page on, and the symptom that shows up for poison messages, rebalance storms, and under-provisioned consumers alike.</li></ul>
+<hr>
+<h1 id="part-2-self-test">Part 2 — Self-test</h1>
+<p>Answer out loud before scrolling. Ten minutes, mid-week.</p>
+<ol><li>What single property distinguishes an event stream from pub/sub? Why does it matter for a consumer that's been down for two hours?</li><li>You need to reprocess three days of already-consumed events. What do you actually do? Why won't <code>auto-offset-reset</code> help?</li><li>What determines whether a consumer is at-most-once or at-least-once?</li><li>Kafka transactions give you exactly-once. Where does that guarantee stop?</li><li>A customer double-clicks "order," then cancels. What guarantees those three events are processed in order — and what breaks it?</li><li>Your topics have 3 partitions. You scale the consumer to 10 replicas. What happens?</li><li>Your listener starts taking 6 minutes per message. Describe the failure that follows.</li><li><code>acks=all</code>, RF=1, the broker's disk dies one second after the ack. Where is the order?</li><li>What does <code>min.insync.replicas=2</code> actually prevent? What breaks when a second broker dies?</li><li>A malformed JSON record arrives. Trace its path. How many retries?</li></ol>
+<details>
+<summary><b>Answers</b></summary>
+<ol><li><strong>Reading doesn't delete</strong> — a durable, retained log with consumer-owned offsets. So a consumer down for two hours resumes from its own committed offset and catches up; in pub/sub those messages are simply gone.</li><li>Reset the group's committed offsets (<code>kafka-consumer-groups --reset-offsets --to-datetime ... --execute</code>, group stopped), or attach a <strong>new</strong> consumer group. <code>auto-offset-reset</code> only applies when a group has <strong>no committed offset</strong> — a running group ignores it entirely.</li><li>The <strong>order of processing vs. offset commit</strong>. Commit-then-process = at-most-once (loses on crash); process-then-commit = at-least-once (duplicates on crash).</li><li>At the boundary of Kafka. It covers consume-process-produce <em>within</em> the log. Any external side effect — email, payment, third-party HTTP — needs its own idempotency key.</li><li>Same partition + single consumer for that partition. The key (<code>customer_id</code>) puts them on one partition. It breaks if the publish is <strong>unkeyed</strong> (round-robin across partitions — our hop-2 bug), or if partition count changes and remaps the key.</li><li>3 replicas get one partition each; <strong>7 sit idle</strong>. Partition count is the parallelism ceiling — autoscaling past it does nothing.</li><li>It exceeds <code>max.poll.interval.ms</code> (default 5 min), so the coordinator treats it as dead, evicts it, and <strong>rebalances</strong>. Consumption pauses and in-flight work is <strong>reprocessed</strong> — slow processing causes duplicates.</li><li><strong>Permanently lost.</strong> ISR = {leader} only, so <code>acks=all</code> acked after one copy. The customer holds a confirmation for an order that exists nowhere.</li><li>It stops <code>acks=all</code> <strong>silently degrading</strong> to a single-copy write when followers fall out of the ISR — the write is rejected instead. When a second broker dies the ISR drops below 2 and <strong>producers block</strong>: consistency chosen over availability, deliberately.</li><li><strong>Zero retries.</strong> <code>ErrorHandlingDeserializer</code> surfaces it, <code>DefaultErrorHandler</code> classifies <code>DeserializationException</code> as fatal, and it goes straight to <code>orders.created.dlq</code>. Only listener exceptions get the 2 retries with 1s backoff.</li></ol>
+</details>
+<hr>
+<h1 id="part-3-recall-card">Part 3 — Recall card</h1>
+<p>Interview-eve density. If a line doesn't unpack into its <em>why</em>, reread that section in Part 1.</p>
+<ul><li><strong>Queue vs pub/sub vs stream:</strong> the axis is <em>who owns position and does reading delete</em>. Stream = durable retained log + consumer-owned offsets ⇒ catch-up, new consumers, replay.</li><li><strong>Replay:</strong> retention keeps data regardless of consumption (default 7 days). Replay = reset committed offsets (<code>--reset-offsets</code>) or new group. <code>auto-offset-reset</code> <strong>only</strong> applies when no committed offset exists.</li><li><strong>Semantics = operation order:</strong> commit-first → at-most-once; process-first → at-least-once; atomic → exactly-once. Real systems: <strong>at-least-once + idempotent consumer = effectively-once.</strong> EOS stops at Kafka's boundary.</li><li><strong>Two dedup layers:</strong> broker idempotent producer (retried writes) vs. app dedup by <code>event_id</code> (reprocessing).</li><li><strong>Ordering = per partition only</strong>, and the key picks the partition. Key sets ordering scope + parallelism grain + hotspot risk. <strong>Must survive every hop</strong> (our bug). Partition count is a one-way door — adding remaps <code>hash(key) % N</code>.</li><li><strong>Consumer group:</strong> one partition → one member. <strong>Partition count = the parallelism ceiling</strong> (3 partitions, 10 replicas ⇒ 7 idle). Rebalances fire on <em>perceived</em> death — exceed <code>max.poll.interval.ms</code> and slow processing becomes duplicates.</li><li><strong>Durability:</strong> <code>acks=all</code> = "all of the <strong>current ISR</strong>". RF=1 ⇒ it's <code>acks=1</code> and an acked order dies with the disk — <strong>say "the order is lost."</strong> Trio: <strong>RF=3 + min.insync.replicas=2 + acks=all</strong>; <code>min.isr</code> prevents silent degradation; second broker loss <strong>blocks producers</strong> (consistency over availability). Unclean leader election = lose acked writes to stay available.</li><li><strong>Poison messages:</strong> bounded retries → DLQ, else the partition blocks forever. Deserialization failures are fatal → <strong>straight to DLQ, no retries</strong>. DLQ without monitoring/replay = write-only graveyard. <strong>Consumer lag</strong> is the page-worthy metric.</li></ul>
+<p><strong>Meta-frame — Week 1's trade-offs are about the transport:</strong></p>
+<ol><li>Latency vs. durability → <code>acks</code></li><li>Throughput/parallelism vs. ordering → partitions and keys</li><li>Availability vs. consistency → <code>min.insync.replicas</code>, unclean leader election</li><li>Simplicity vs. delivery strength → at-least-once + idempotency vs. transactions</li></ol>
+<p class="built">Generated from <code>notes/week-1-concepts.md</code> by <code>notes/build.py</code>.
+Edit the Markdown, not this file.</p>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'default',
+  themeVariables:{fontSize:'14px'}});
+</script>
+</body></html>

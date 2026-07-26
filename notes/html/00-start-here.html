@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Start here — the story so far</title>
+<style>
+:root{--bg:#fdfdfc;--fg:#1f2328;--muted:#5b6470;--line:#e3e5e8;--accent:#0b6cc4;
+--code-bg:#f4f5f7;--card:#fff;--warn-bg:#fff8e6;--warn-br:#e8b931;--quote:#f0f4f9}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#e6e8ea;--muted:#9aa4b0;
+--line:#2c3238;--accent:#5ab0ff;--code-bg:#1d2227;--card:#181c20;--warn-bg:#2a2410;
+--warn-br:#8a7320;--quote:#1a2028}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px 96px}
+nav.top{position:sticky;top:0;z-index:9;background:var(--bg);border-bottom:1px solid var(--line);
+padding:12px 0;margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap}
+nav.top a{font-size:14px;text-decoration:none;color:var(--muted);padding:5px 11px;
+border:1px solid var(--line);border-radius:99px}
+nav.top a:hover{color:var(--accent);border-color:var(--accent)}
+nav.top a.active{background:var(--accent);border-color:var(--accent);color:#fff}
+h1{font-size:2em;line-height:1.25;margin:1.2em 0 .5em;letter-spacing:-.02em}
+h2{font-size:1.42em;margin:1.9em 0 .5em;padding-bottom:.28em;border-bottom:1px solid var(--line);
+letter-spacing:-.01em}
+h3{font-size:1.13em;margin:1.7em 0 .4em}
+h1:first-of-type{margin-top:.6em}
+p{margin:.85em 0}
+a{color:var(--accent)}
+ul,ol{padding-left:1.4em;margin:.8em 0}
+li{margin:.42em 0}
+code{background:var(--code-bg);padding:.14em .38em;border-radius:4px;font-size:.88em;
+font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+overflow-x:auto;margin:1.1em 0}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.55}
+pre.mermaid{background:var(--card);text-align:center;line-height:1.4}
+blockquote{margin:1.2em 0;padding:.9em 1.1em;background:var(--quote);
+border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.94em;display:block;
+overflow-x:auto}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;
+padding:12px 16px;margin:1.2em 0}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:.6em;padding-bottom:.6em;border-bottom:1px solid var(--line)}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 18px;
+margin:1.6em 0}
+.toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+margin-bottom:8px}
+.toc ul{margin:0;padding-left:1.1em}
+.toc li{margin:.2em 0;font-size:.93em}
+.built{color:var(--muted);font-size:13px;margin-top:3em;padding-top:1.2em;
+border-top:1px solid var(--line)}
+@media(max-width:640px){body{font-size:15px}.wrap{padding:0 16px 64px}h1{font-size:1.6em}}
+</style>
+</head><body>
+<div class="wrap">
+<nav class="top"><a href="00-start-here.html" class='active'>Start Here</a><a href="week-1-concepts.html">Week 1</a><a href="week-2-concepts.html">Week 2</a></nav>
+<div class="toc"><div class="toc-title">On this page</div><ul><li><a href="#how-to-use-these-notes">How to use these notes</a></li><li><a href="#reading-these-as-web-pages">Reading these as web pages</a></li><li><a href="#the-through-line">The through-line</a></li><li><a href="#the-one-sentence-version-of-each-week">The one-sentence version of each week</a></li><li><a href="#the-unifying-idea-say-this-in-interviews">The unifying idea (say this in interviews)</a></li></ul></div>
+<h1 id="start-here-the-story-so-far">Start here — the story so far</h1>
+<p><strong>Read this first, every session.</strong> It takes five minutes and rebuilds the context that a week away erodes. The weekly sheets go deep on one topic each; this page is the spine that connects them.</p>
+<h2 id="how-to-use-these-notes">How to use these notes</h2>
+<p>Each <code>week-N-concepts.md</code> has three layers. Use the one that matches why you're opening it:</p>
+<table><thead><tr><th>Layer</th><th>When to read it</th><th>What it's for</th></tr></thead><tbody><tr><td><strong>Part 1 — The story</strong></td><td>learning it, or coming back after a gap</td><td>narrative + worked traces with real numbers. Rebuilds understanding, not just recognition.</td></tr><tr><td><strong>Part 2 — Self-test</strong></td><td>mid-week, 10 minutes</td><td>find retrieval gaps <em>before</em> a drill does</td></tr><tr><td><strong>Part 3 — Recall card</strong></td><td>night before an interview</td><td>dense summary; only useful once Part 1 has clicked</td></tr></tbody></table>
+<p>If a Part 3 bullet doesn't immediately unpack in your head into the <em>why</em>, go back to Part 1 for that section. That gap is the signal.</p>
+<h2 id="reading-these-as-web-pages">Reading these as web pages</h2>
+<p>The Markdown renders fine on GitHub, but there's also a styled HTML version with the diagrams drawn out — nicer for long reading, works on a phone:</p>
+<pre><code class="lang-bash">open notes/html/index.html</code></pre>
+<p><strong>The Markdown is the single source of truth.</strong> <code>notes/html/</code> is generated — never edit it by hand. After changing any <code>.md</code>, regenerate:</p>
+<pre><code class="lang-bash">python3 notes/build.py</code></pre>
+<p>(No dependencies; needs an internet connection when <em>viewing</em>, since Mermaid is loaded from a CDN to draw the diagrams.)</p>
+<h2 id="the-through-line">The through-line</h2>
+<p>The whole project is one argument, and each week is the next move in it. Read this chain top to bottom — every week exists because the previous week's solution created a new problem.</p>
+<p><strong>Week 1 — you can't have a distributed system without a way to move facts between services.</strong> Kafka is a durable, replayable log rather than a queue, which buys temporal decoupling: <code>inventory-service</code> can be down for two hours and catch up from its own committed offset. But the log guarantees ordering only <em>within a partition</em>, so ordering became a key-choice problem. And delivery is <strong>at-least-once</strong> — the consumer might see the same event twice. ➜ <em>left us needing:</em> a way to make repeat deliveries harmless.</p>
+<p><strong>Week 2 — a service that owns state must write to its database AND publish an event, and those two writes can't be atomic.</strong> The transactional outbox collapses them into one DB write plus a background relay. That relay is at-least-once by construction, which turns an impossible problem (atomicity across two systems) into a solvable one (duplicates). The solution to duplicates is the idempotency ledger — <code>processed_events</code>, keyed by <code>event_id</code>, enforced by the database rather than by a HashSet. ➜ <em>left us needing:</em> the same fix at hop 2 (inventory still dual-writes), and a way to stop duplicating event classes across services.</p>
+<p><strong>Week 3 — next up.</strong> Every service redefines <code>OrderCreatedEvent</code> by hand. The moment one team adds a field, the others break silently. Schema registry and contracts.</p>
+<h2 id="the-one-sentence-version-of-each-week">The one-sentence version of each week</h2>
+<p>Useful when someone says "tell me about this project" and you have 30 seconds.</p>
+<ul><li><strong>Week 1:</strong> <em>A durable log decouples services in time, but only guarantees order within a partition and only promises at-least-once delivery.</em></li><li><strong>Week 2:</strong> <em>You can't write atomically to a database and a broker, so you write only to the database and relay — accepting duplicates, then making duplicates harmless with a database-enforced idempotency key.</em></li></ul>
+<h2 id="the-unifying-idea-say-this-in-interviews">The unifying idea (say this in interviews)</h2>
+<p>Every pattern in this project <strong>converts an impossible guarantee into a merely difficult one</strong>:</p>
+<ul><li>Outbox converts <em>atomicity across two systems</em> → <em>duplicate deliveries</em></li><li>Idempotency converts <em>"deliver exactly once"</em> → <em>"apply exactly once"</em></li><li>Sagas convert <em>distributed rollback</em> → <em>compensating transactions</em></li></ul>
+<p>Name the impossible thing and the difficult thing it became, and you're answering at the right altitude.</p>
+<p class="built">Generated from <code>notes/00-start-here.md</code> by <code>notes/build.py</code>.
+Edit the Markdown, not this file.</p>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'default',
+  themeVariables:{fontSize:'14px'}});
+</script>
+</body></html>

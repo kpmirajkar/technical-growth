@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 2 — Event-Driven Patterns</title>
+<style>
+:root{--bg:#fdfdfc;--fg:#1f2328;--muted:#5b6470;--line:#e3e5e8;--accent:#0b6cc4;
+--code-bg:#f4f5f7;--card:#fff;--warn-bg:#fff8e6;--warn-br:#e8b931;--quote:#f0f4f9}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#e6e8ea;--muted:#9aa4b0;
+--line:#2c3238;--accent:#5ab0ff;--code-bg:#1d2227;--card:#181c20;--warn-bg:#2a2410;
+--warn-br:#8a7320;--quote:#1a2028}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px 96px}
+nav.top{position:sticky;top:0;z-index:9;background:var(--bg);border-bottom:1px solid var(--line);
+padding:12px 0;margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap}
+nav.top a{font-size:14px;text-decoration:none;color:var(--muted);padding:5px 11px;
+border:1px solid var(--line);border-radius:99px}
+nav.top a:hover{color:var(--accent);border-color:var(--accent)}
+nav.top a.active{background:var(--accent);border-color:var(--accent);color:#fff}
+h1{font-size:2em;line-height:1.25;margin:1.2em 0 .5em;letter-spacing:-.02em}
+h2{font-size:1.42em;margin:1.9em 0 .5em;padding-bottom:.28em;border-bottom:1px solid var(--line);
+letter-spacing:-.01em}
+h3{font-size:1.13em;margin:1.7em 0 .4em}
+h1:first-of-type{margin-top:.6em}
+p{margin:.85em 0}
+a{color:var(--accent)}
+ul,ol{padding-left:1.4em;margin:.8em 0}
+li{margin:.42em 0}
+code{background:var(--code-bg);padding:.14em .38em;border-radius:4px;font-size:.88em;
+font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+overflow-x:auto;margin:1.1em 0}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.55}
+pre.mermaid{background:var(--card);text-align:center;line-height:1.4}
+blockquote{margin:1.2em 0;padding:.9em 1.1em;background:var(--quote);
+border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.94em;display:block;
+overflow-x:auto}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;
+padding:12px 16px;margin:1.2em 0}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:.6em;padding-bottom:.6em;border-bottom:1px solid var(--line)}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 18px;
+margin:1.6em 0}
+.toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+margin-bottom:8px}
+.toc ul{margin:0;padding-left:1.1em}
+.toc li{margin:.2em 0;font-size:.93em}
+.built{color:var(--muted);font-size:13px;margin-top:3em;padding-top:1.2em;
+border-top:1px solid var(--line)}
+@media(max-width:640px){body{font-size:15px}.wrap{padding:0 16px 64px}h1{font-size:1.6em}}
+</style>
+</head><body>
+<div class="wrap">
+<nav class="top"><a href="00-start-here.html">Start Here</a><a href="week-1-concepts.html">Week 1</a><a href="week-2-concepts.html" class='active'>Week 2</a></nav>
+<div class="toc"><div class="toc-title">On this page</div><ul><li><a href="#part-1-the-story">Part 1 — The story</a></li><li><a href="#11-adding-a-database-creates-a-problem-that-didnt-exist-before">1.1 Adding a database creates a problem that didn't exist before</a></li><li><a href="#12-the-dual-write-problem-traced-concretely">1.2 The dual-write problem, traced concretely</a></li><li><a href="#13-the-outbox-collapse-two-writes-into-one">1.3 The outbox: collapse two writes into one</a></li><li><a href="#14-the-price-duplicates-are-now-guaranteed">1.4 The price: duplicates are now guaranteed ⚠️</a></li><li><a href="#15-making-duplicates-harmless-the-idempotency-ledger">1.5 Making duplicates harmless: the idempotency ledger</a></li><li><a href="#16-the-other-concurrency-bug-lost-updates">1.6 The other concurrency bug: lost updates</a></li><li><a href="#17-how-fat-should-an-event-be">1.7 How fat should an event be?</a></li><li><a href="#18-sagas-multi-step-workflows-without-distributed-transactions">1.8 Sagas: multi-step workflows without distributed transactions</a></li><li><a href="#19-cqrs-split-the-models-not-necessarily-the-databases">1.9 CQRS: split the models, not necessarily the databases</a></li><li><a href="#part-2-self-test">Part 2 — Self-test</a></li><li><a href="#part-3-recall-card">Part 3 — Recall card</a></li></ul></div>
+<h1 id="week-2-event-driven-patterns">Week 2 — Event-Driven Patterns</h1>
+<p>Read <a href="00-start-here.md">00-start-here.md</a> first if you've been away.</p>
+<p><strong>Part 1</strong> is the narrative — read it when learning or returning after a gap. <strong>Part 2</strong> is self-test. <strong>Part 3</strong> is the dense recall card for interview eve.</p>
+<blockquote><p><strong>Where this week comes from.</strong> Week 1 gave you a durable log that decouples services in time. But <code>order-service</code> had no database — it just published and forgot. The moment a real service must <em>remember</em> orders, it has to write to two places at once, and that's where this week begins.</p></blockquote>
+<hr>
+<h1 id="part-1-the-story">Part 1 — The story</h1>
+<h2 id="11-adding-a-database-creates-a-problem-that-didnt-exist-before">1.1 Adding a database creates a problem that didn't exist before</h2>
+<p>Week 1's <code>order-service</code> did one thing: publish to Kafka. One write, no atomicity question.</p>
+<p>But a real order service must persist orders — you need <code>GET /orders/{id}</code>, you need the row to survive a restart, you need it to be the system of record for "did this customer actually order this?" So we added Postgres.</p>
+<p>Now <code>POST /orders</code> must do <strong>two</strong> things:</p>
+<ol><li><code>INSERT</code> the order into Postgres</li><li>Publish <code>OrderCreated</code> to Kafka</li></ol>
+<p>And here's the uncomfortable part: <strong>there is no way to make those two writes atomic.</strong> Postgres transactions cover Postgres. Kafka transactions cover Kafka. Nothing spans both. (XA/two-phase commit technically exists and is almost universally avoided — it's slow, and it makes both systems' availability depend on each other.)</p>
+<p>So adding the database didn't make the system worse — persistence was non-negotiable. It just surfaced a problem that was always waiting.</p>
+<h2 id="12-the-dual-write-problem-traced-concretely">1.2 The dual-write problem, traced concretely</h2>
+<p>"Dual write" is the name. Here's the mechanism — and note that the killer is a <strong>crash</strong>, not an exception. An exception you could catch and retry. A process that dies has no chance to do anything.</p>
+<p><strong>Ordering A — database first, then publish:</strong></p>
+<pre><code>1. INSERT order 7f3a into orders          ✓ committed
+2. ⚡ process is killed (OOM, pod evicted, node dies)
+3. kafkaTemplate.send(...)                 never runs</code></pre>
+<p>Result: the order exists in your database. The customer sees it in their account. <strong>No downstream service ever hears about it.</strong> Inventory never reserves stock, notification never emails. The order sits in <code>PLACED</code> forever. Silent, permanent, and nothing in the system is "wrong" enough to alert on.</p>
+<p><strong>Ordering B — publish first, then database:</strong></p>
+<pre><code>1. kafkaTemplate.send(...)                 ✓ broker acked
+2. ⚡ process is killed
+3. INSERT order 7f3a into orders           never runs</code></pre>
+<p>Result: inventory has already reserved stock for an order <strong>that does not exist</strong>. The customer's <code>GET /orders/7f3a</code> returns 404 while your warehouse has product set aside. And you cannot un-publish — consumers have already acted on it.</p>
+<p><strong>Which is worse?</strong> B, generally — A is an under-delivery you can detect and reconcile later; B has already caused external side effects for a fact that isn't true. But the real answer is that <em>both are unacceptable</em>, which is why the pattern exists.</p>
+<p><strong>The insight that unlocks the fix:</strong> you can't make two writes atomic — so stop doing two writes. Write the event <strong>into the same database</strong>, in the <strong>same transaction</strong>, and move it to Kafka afterwards.</p>
+<h2 id="13-the-outbox-collapse-two-writes-into-one">1.3 The outbox: collapse two writes into one</h2>
+<pre class="mermaid">flowchart LR
+    A["POST /orders"] --&gt; TX
+    subgraph TX["ONE database transaction"]
+        B[("orders row&lt;br/&gt;status = PLACED")]
+        C[("outbox row&lt;br/&gt;published_at = NULL")]
+    end
+    TX --&gt;|commit| R["HTTP 200 accepted"]
+    TX -.-&gt;|"OutboxPublisher&lt;br/&gt;polls every 500ms"| K["Kafka: orders.created"]
+    K --&gt; I["inventory-service"]</pre>
+<p><code>OrderController.createOrder()</code> is <code>@Transactional</code> and does exactly two inserts, <strong>both into Postgres</strong>:</p>
+<ul><li>the <code>orders</code> row — current-state business data</li><li>the <code>outbox</code> row — the serialized <code>OrderCreated</code> event, with <code>published_at = NULL</code> meaning "not yet relayed"</li></ul>
+<p>Either both commit or neither does. That's ordinary database atomicity — no distributed anything.</p>
+<p><code>OutboxPublisher</code> then runs every 500ms: select rows where <code>published_at IS NULL</code>, send each to Kafka, stamp <code>published_at</code>.</p>
+<p><strong>Two table roles — don't mix these up:</strong></p>
+<table><thead><tr><th></th><th><code>orders</code></th><th><code>outbox</code></th></tr></thead><tbody><tr><td>Holds</td><td>current state ("where is this order <em>now</em>")</td><td>the event log ("what <em>happened</em>")</td></tr><tr><td>Rows per order</td><td>one, mutated over time</td><td>one per event, immutable</td></tr><tr><td>Answers</td><td>"what's the status?"</td><td>"what occurred, and in what order?"</td></tr></tbody></table>
+<p><strong>Why not just poll the <code>orders</code> table</strong> and skip the outbox? Two reasons that matter:</p>
+<ol><li><strong>One row can't hold multiple events.</strong> An order is created, then amended, then cancelled — three events. The <code>orders</code> table ends up with a single row reading <code>status = CANCELLED</code>. Poll it and you learn only the ending. The amendment never happened, as far as any consumer knows.</li><li><strong>The payload must be captured at the moment it happened.</strong> Polling <code>orders</code> means <em>reconstructing</em> an event from whatever the row says now — so you'd publish "OrderCreated" carrying the <em>amended</em> quantity, which is a lie about the past. The outbox row froze the truth at write time.</li></ol>
+<p><strong>Why the response says <code>accepted</code>:</strong> at HTTP-200 time the event is committed to your database but <strong>not yet on Kafka</strong>. So 200 honestly means "accepted and durably recorded," not "published," and certainly not "fulfilled." This is the same accepted-vs-fulfilled boundary from Week 1, now enforced by the design.</p>
+<h2 id="14-the-price-duplicates-are-now-guaranteed">1.4 The price: duplicates are now guaranteed ⚠️</h2>
+<p><strong>This is the most important section in the week. It's the piece that links the outbox to everything you built in <code>inventory-service</code>.</strong></p>
+<p>Look at <code>OutboxPublisher</code> closely. It does two things per row:</p>
+<pre><code class="lang-java">kafkaTemplate.send(TOPIC, key, payload).get();   // (1) message is now on the broker
+event.setPublishedAt(Instant.now());             // (2) mark it relayed</code></pre>
+<p>Two operations again. Not atomic again. So trace the crash:</p>
+<pre><code>t=0ms    Poller selects outbox row e-9c2 (published_at IS NULL)
+t=5ms    send() succeeds  → event e-9c2 is ON THE BROKER
+t=6ms    inventory-service consumes e-9c2, reserves 2 units  → stock 50 → 48
+t=7ms    ⚡ order-service is killed before published_at is written
+─────────────────────────────────────────────────────────────────────
+t=30s    order-service restarts
+t=30.5s  Poller runs: SELECT ... WHERE published_at IS NULL
+         → row e-9c2 is STILL THERE (never stamped)
+t=30.5s  send() again → THE SAME EVENT e-9c2 HITS KAFKA A SECOND TIME
+t=30.6s  inventory-service consumes e-9c2 again...</code></pre>
+<p><strong>Nothing was lost. Something was sent twice.</strong></p>
+<p>This is the single most common misreading of the pattern: the outbox does not lose messages, it <em>repeats</em> them. The property has a name you already know from Week 1 — <strong>at-least-once delivery</strong> — and here it is by <em>construction</em>, not by accident. You chose it.</p>
+<p>And that's the trade you accepted deliberately:</p>
+<blockquote><p>Atomicity across two systems is <strong>impossible</strong>. Duplicate delivery is merely <strong>difficult</strong>. The outbox trades the first for the second.</p></blockquote>
+<p>Which means the outbox is only half a solution. On its own it would corrupt inventory. The other half has to live in the consumer.</p>
+<h2 id="15-making-duplicates-harmless-the-idempotency-ledger">1.5 Making duplicates harmless: the idempotency ledger</h2>
+<p>Continue the trace above. <code>inventory-service</code> receives <code>e-9c2</code> for the second time. Stock is currently 48. What stops it becoming 46?</p>
+<p>The <strong>first line</strong> of the listener:</p>
+<pre><code class="lang-java">if (processedEvents.existsById(event.eventId())) { return; }   // skip
+processedEvents.save(new ProcessedEvent(event.eventId(), ...)); // claim it</code></pre>
+<p><code>processed_events</code> has its <strong>primary key on <code>event_id</code></strong>. That row was inserted the first time around, so the second delivery short-circuits and returns. <strong>Stock stays 48.</strong> You verified exactly this last session by replaying an event with <code>rpk</code> and watching the count not move.</p>
+<p>Full trace, end to end:</p>
+<table><thead><tr><th>Delivery</th><th><code>processed_events</code> has <code>e-9c2</code>?</th><th>Action</th><th>Stock</th></tr></thead><tbody><tr><td>1st</td><td>no</td><td>insert ledger row, decrement</td><td>50 → <strong>48</strong></td></tr><tr><td>2nd (the duplicate)</td><td><strong>yes</strong></td><td>log "duplicate … skipping", return</td><td><strong>48</strong></td></tr></tbody></table>
+<p><strong>Why a database table and not the Week 1 <code>HashSet</code>?</strong> The HashSet was always a lie, for two reasons that both bite in production:</p>
+<ul><li><strong>It dies with the process.</strong> Restart → empty set → everything replays and double-applies. The exact scenario above would have corrupted stock.</li><li><strong>It's per-instance.</strong> Two replicas = two sets = zero coordination. This is precisely why <code>k8s/03-consumers.yaml</code> was pinned to <code>replicas: 1</code> — and why finishing this week is what lifts that restriction.</li></ul>
+<p>The listener is <code>@Transactional</code>, so the ledger insert and the stock change commit or roll back <strong>together</strong>. If two replicas race the same event, one commits and the other dies on the primary-key violation and rolls back entirely. The database does the coordinating — that's the whole point.</p>
+<h2 id="16-the-other-concurrency-bug-lost-updates">1.6 The other concurrency bug: lost updates</h2>
+<p>Idempotency stops the <em>same</em> event applying twice. It does nothing about two <em>different</em> events racing each other.</p>
+<p>Naive version:</p>
+<pre><code class="lang-java">Stock s = repo.findById(sku);        // reads quantity = 50
+s.setQuantity(s.getQuantity() - 2);  // computes 48 in memory
+repo.save(s);                        // writes 48</code></pre>
+<p>Two transactions run this concurrently for two different orders:</p>
+<pre><code>T1 reads 50 ─┐
+T2 reads 50 ─┘   both computed from the same stale value
+T1 writes 48
+T2 writes 48     ← one reservation vanished. Stock should be 46.</code></pre>
+<p>That's a <strong>lost update</strong>, and it's invisible — no error, no exception, just inventory that slowly drifts from reality.</p>
+<p>The fix is to stop reading-then-writing and let the database do both at once:</p>
+<pre><code class="lang-sql">UPDATE stock SET quantity = quantity - :qty
+WHERE sku = :sku AND quantity &gt;= :qty</code></pre>
+<p>The row lock serializes it; the <code>WHERE</code> clause makes the check and the decrement one indivisible step. Return value <code>1</code> = reserved, <code>0</code> = insufficient stock (or unknown SKU). That's <code>StockRepository.tryReserve()</code>.</p>
+<p><em>Alternatives worth naming:</em> optimistic locking with <code>@Version</code> (retry on conflict), or <code>SELECT ... FOR UPDATE</code> (explicit pessimistic lock).</p>
+<h2 id="17-how-fat-should-an-event-be">1.7 How fat should an event be?</h2>
+<p>Three points on one axis: <strong>how much does the event carry, and who owns the truth?</strong></p>
+<table><thead><tr><th>Pattern</th><th>Event carries</th><th>Consumer must</th><th>Cost</th></tr></thead><tbody><tr><td><strong>Event notification</strong></td><td>just an ID: "order 123 changed"</td><td>call back to the producer for details</td><td>producer must be up; chatty; runtime coupling</td></tr><tr><td><strong>Event-carried state transfer (ECST)</strong></td><td>the full business payload</td><td>nothing — it's all in the event</td><td>bigger events; data duplicated, can go stale</td></tr><tr><td><strong>Event sourcing</strong></td><td>every state change, retained forever</td><td>fold the events to rebuild state</td><td>the log <em>is</em> the database; replay + audit for free, real complexity</td></tr></tbody></table>
+<p><strong>This project is ECST.</strong> <code>OrderCreatedEvent</code> carries <code>customer_id</code>, <code>sku</code>, and <code>quantity</code>, so <code>inventory-service</code> never calls back to <code>order-service</code>. That is precisely what makes the Black Friday story work: inventory can be down for two hours and then catch up from the log alone, because every event is self-contained. With event <em>notification</em>, a two-hour catch-up would mean hammering <code>order-service</code> with thousands of callbacks.</p>
+<p><strong>Two traps:</strong></p>
+<ul><li><strong>ECST is about payload fatness, nothing else.</strong> It is not a statement about order status, fulfillment, or delivery guarantees. If you find yourself reaching for "ECST" to explain something that isn't "how much data is in the message," it's the wrong term.</li><li><strong>"We store events in Kafka" ≠ event sourcing.</strong> Event sourcing means the log is the <strong>system of record</strong> — you rebuild state by replaying it. We have a durable log <em>and</em> an authoritative <code>stock</code> table, and the table wins. That is ECST with a log, not event sourcing. Conflating them is a common tell.</li></ul>
+<h2 id="18-sagas-multi-step-workflows-without-distributed-transactions">1.8 Sagas: multi-step workflows without distributed transactions</h2>
+<p>You can't hold a transaction across order → payment → shipping. A <strong>saga</strong> is a sequence of <em>local</em> transactions, each with a <strong>compensating action</strong> if a later step fails.</p>
+<pre class="mermaid">flowchart LR
+    subgraph choreo["Choreography — no central brain"]
+        direction LR
+        O1["order"] --&gt;|OrderCreated| I1["inventory"]
+        I1 --&gt;|InventoryReserved| P1["payment"]
+        P1 --&gt;|PaymentTaken| S1["shipping"]
+    end</pre>
+<pre class="mermaid">flowchart TB
+    subgraph orch["Orchestration — central coordinator"]
+        SAGA{{"Order Saga"}}
+        SAGA --&gt;|1 reserve| I2["inventory"]
+        SAGA --&gt;|2 charge| P2["payment"]
+        SAGA --&gt;|3 ship| S2["shipping"]
+        I2 -.-&gt;|reply| SAGA
+        P2 -.-&gt;|reply| SAGA
+        S2 -.-&gt;|reply| SAGA
+    end</pre>
+<ul><li><strong>Choreography</strong> — each service reacts to others' events. No coordinator, low coupling, easy to start. Your <code>order → inventory → notification</code> chain is a (trivial, two-step) choreographed saga. <strong>Cost:</strong> the workflow exists nowhere explicitly. To answer "what happens after payment fails?" you read four codebases. Accidental cycles are easy to create.</li><li><strong>Orchestration</strong> — a coordinator drives each step and handles replies. The workflow is <strong>one readable, testable state machine</strong>. <strong>Cost:</strong> the orchestrator is coupling, and a bottleneck/SPOF.</li></ul>
+<p>Rule of thumb: choreography up to ~3 steps; orchestration once "what happens if step 4 fails?" has no single obvious owner.</p>
+<p><strong>Trap: compensation is not rollback.</strong> Refunding a charge is a <em>new</em> transaction. The money moved; statements showed it; the customer may have got an email. Sagas therefore expose <strong>intermediate states to the outside world</strong> — "reserved but not yet paid" is externally visible, and you must design for it. That's why the accepted-vs-fulfilled vocabulary matters so much.</p>
+<h2 id="19-cqrs-split-the-models-not-necessarily-the-databases">1.9 CQRS: split the models, not necessarily the databases</h2>
+<p>Commands (writes) and queries (reads) have different shapes, different scaling profiles, and different consistency needs — so model them separately. The read side is often a <strong>projection</strong> built by consuming events.</p>
+<p><strong>Trap:</strong> CQRS is routinely oversold as "separate read and write databases," which imports <strong>eventual consistency into your own UI</strong>. The user submits a form, immediately reloads, and sees stale data. That's a <em>product</em> decision disguised as an architecture one. You can do CQRS with two models against a single database and avoid it entirely. Split the stores only when read scale genuinely demands it.</p>
+<hr>
+<h1 id="part-2-self-test">Part 2 — Self-test</h1>
+<p>Answer out loud before scrolling. Ten minutes, mid-week.</p>
+<ol><li>Why can't you wrap a Postgres insert and a Kafka publish in one transaction? What's the standard escape?</li><li><code>OutboxPublisher</code> sends a message successfully, then the pod is killed before it can stamp <code>published_at</code>. What happens 500ms later, and what is that property called?</li><li>Stock is 50. An order for 2 is delivered twice. What is the stock afterwards, and precisely which line of code decides that?</li><li>Why is a database table a better dedup store than a <code>ConcurrentHashMap</code>? Give two independent reasons.</li><li><code>findById</code> → subtract → <code>save</code> is wrong under concurrency. Name the bug and write the SQL that fixes it.</li><li>Your <code>orders</code> table has one row per order. Name two things the <code>outbox</code> table can express that polling <code>orders</code> cannot.</li><li>Is this project event sourcing? Justify in one sentence.</li><li>Choreography vs. orchestration — one advantage and one cost each.</li><li>Why does compensation differ fundamentally from rollback?</li><li>Where does this project <em>still</em> have an unsolved dual write?</li></ol>
+<details>
+<summary><b>Answers</b></summary>
+<ol><li>Transactions are per-system; nothing spans Postgres and Kafka (XA exists, is avoided). Escape: transactional outbox — write the event into the same DB in the same transaction, relay asynchronously.</li><li>The row still has <code>published_at IS NULL</code>, so the poller selects it and <strong>sends it again</strong> — a duplicate. That's <strong>at-least-once delivery</strong>, by construction.</li><li><strong>48.</strong> The first delivery decrements 50→48; the second is stopped by <code>processedEvents.existsById(event.eventId())</code> returning true, so the listener returns before touching stock.</li><li>(a) It survives restarts — a HashSet is empty after every deploy, so everything replays and double-applies. (b) It's shared across replicas — per-instance sets don't coordinate, which is why consumers were pinned to <code>replicas: 1</code>.</li><li><strong>Lost update.</strong> <code>UPDATE stock SET quantity = quantity - :qty WHERE sku = :sku AND quantity &gt;= :qty</code> — check and decrement in one statement, serialized by the row lock.</li><li>(a) Multiple events per order — created/amended/cancelled are three rows; <code>orders</code> keeps only the final state. (b) The payload frozen at the moment it happened — polling <code>orders</code> reconstructs from current state and would publish a "created" event carrying later, amended values.</li><li><strong>No.</strong> The authoritative <code>stock</code> and <code>orders</code> tables are the system of record; the log carries fat events but state isn't rebuilt by replaying it. That's ECST, not event sourcing.</li><li>Choreography: autonomous, low coupling / workflow is implicit and spread across services. Orchestration: workflow explicit, testable in one place / coordinator is coupling and a potential SPOF.</li><li>Rollback erases as if nothing happened; compensation is a <strong>new</strong> transaction undoing a side effect that was already externally visible (money moved, emails sent).</li><li><strong>Hop 2.</strong> <code>inventory-service</code> publishes <code>inventory.result</code> from inside its DB transaction — the same dual write the outbox fixed at hop 1. Fix is a second outbox.</li></ol>
+</details>
+<hr>
+<h1 id="part-3-recall-card">Part 3 — Recall card</h1>
+<p>Interview-eve density. If a line doesn't unpack into its <em>why</em>, reread that section in Part 1.</p>
+<ul><li><strong>Dual write:</strong> DB + broker can't be atomic. Crash between → orphan order (DB first) or phantom event (broker first). Can't unpublish.</li><li><strong>Outbox:</strong> order row + event row in ONE transaction; poller relays and stamps <code>published_at</code>. <code>orders</code> = current state, <code>outbox</code> = event log.</li><li><strong>The trade:</strong> relay is <strong>at-least-once by construction</strong> — crash after send, before stamp → re-sent. Outbox converts <em>impossible atomicity</em> into <em>solvable duplicates</em>.</li><li><strong>Idempotency:</strong> PK on <code>event_id</code> in <code>processed_events</code>, inserted in the <strong>same transaction</strong> as the business change. DB enforces it; HashSet couldn't (dies on restart, per-instance).</li><li><strong>Lost update:</strong> never read-modify-write. <code>UPDATE ... WHERE quantity &gt;= :qty</code>.</li><li><strong>Payload spectrum:</strong> notification (ID, callback, coupled) → <strong>ECST</strong> (fat payload, decoupled, can go stale — <em>this project</em>) → event sourcing (log is the system of record).</li><li><strong>Sagas:</strong> local transactions + compensations. Choreography = autonomous but implicit; orchestration = explicit but centralised. Compensation ≠ rollback; intermediate states are externally visible.</li><li><strong>CQRS:</strong> separate models; separate <em>databases</em> imports eventual consistency into your UI.</li><li><strong>Our remaining gap:</strong> hop 2 still dual-writes. Say it unprompted.</li></ul>
+<p><strong>Meta-frame — Week 2's trade-offs are about state crossing boundaries:</strong></p>
+<ol><li>Atomicity vs. reality → outbox + at-least-once + idempotency</li><li>Coupling vs. staleness → notification vs. ECST</li><li>Explicitness vs. autonomy → orchestration vs. choreography</li><li>Read scale vs. consistency → CQRS projections vs. read-your-writes</li></ol>
+<p class="built">Generated from <code>notes/week-2-concepts.md</code> by <code>notes/build.py</code>.
+Edit the Markdown, not this file.</p>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'default',
+  themeVariables:{fontSize:'14px'}});
+</script>
+</body></html>

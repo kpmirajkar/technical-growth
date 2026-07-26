@@ -18,6 +18,25 @@ you're opening it:
 If a Part 3 bullet doesn't immediately unpack in your head into the *why*,
 go back to Part 1 for that section. That gap is the signal.
 
+## Reading these as web pages
+
+The Markdown renders fine on GitHub, but there's also a styled HTML version
+with the diagrams drawn out — nicer for long reading, works on a phone:
+
+```bash
+open notes/html/index.html
+```
+
+**The Markdown is the single source of truth.** `notes/html/` is generated —
+never edit it by hand. After changing any `.md`, regenerate:
+
+```bash
+python3 notes/build.py
+```
+
+(No dependencies; needs an internet connection when *viewing*, since Mermaid
+is loaded from a CDN to draw the diagrams.)
+
 ## The through-line
 
 The whole project is one argument, and each week is the next move in it.
