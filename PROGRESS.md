@@ -25,7 +25,9 @@ see "Git checkpoints" at the bottom.
   against a live stack and assert on the HTTP response.
 - Theory study sheet: `notes/week-1-concepts.md` — messaging semantics +
   Kafka mechanics distilled as interview one-pager #1 (the Roadmap's Week 4/
-  8/12 "1-pager" artifacts start here).
+  8/12 "1-pager" artifacts start here). Mermaid diagrams added later
+  alongside Week 2's: messaging models, key→partition routing (incl. the
+  unkeyed-hop-2 bug), parallelism ceiling, ISR/acks durability, DLQ paths.
 
 **Issues hit & fixed**
 - `consumer_inventory` and `consumer_notification` failed to build: both only
