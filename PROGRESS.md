@@ -165,9 +165,15 @@ see "Git checkpoints" at the bottom.
   transaction — same problem the outbox solved at hop 1; fix = second outbox.
 - Poller vs CDC (Debezium), `ddl-auto: update` vs Flyway — production notes.
 
+**Theory**
+- Study sheet written: `notes/week-2-concepts.md` (one-pager #2) — dual-write
+  problem, outbox, DB-enforced idempotency + lost updates, the payload
+  spectrum (notification / ECST / event sourcing), sagas, CQRS. Includes
+  Mermaid diagrams (outbox flow, choreography vs orchestration) which render
+  natively on GitHub.
+
 **Next**
-- Week 2 theory discussion: event notification vs event-carried state
-  transfer vs event sourcing; CQRS; saga choreography vs orchestration.
+- Week 2 articulation drill (interview-style Q&A on the above), on request.
 - Week 3: schema registry, kill the duplicated event classes.
 
 ---
